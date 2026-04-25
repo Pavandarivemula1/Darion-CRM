@@ -22,23 +22,69 @@ module.exports = async function handler(req, res) {
       });
 
       // Get last ID to increment sequentially
-      const { data: existingLeads } = await supabase
-        .from('leads')
-        .select('Lead ID')
-        .order('Lead ID', { ascending: false })
-        .limit(1);
-
       let lastId = 1000;
-      if (existingLeads && existingLeads.length > 0) {
-        try {
-          const idStr = existingLeads[0]['Lead ID'];
-          lastId = parseInt(idStr.split('-')[1]) || 1000;
-        } catch(e){}
+      let phoneSet = new Set();
+      let emailSet = new Set();
+      let hasMore = true;
+      let from = 0;
+      const step = 1000;
+
+      while (hasMore) {
+        const { data: leadsBatch, error } = await supabase
+          .from('leads')
+          .select('Lead ID, Phone, Email')
+          .range(from, from + step - 1);
+
+        if (error || !leadsBatch || leadsBatch.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        for (const row of leadsBatch) {
+          try {
+            if (row['Phone']) phoneSet.add(row['Phone'].trim());
+            if (row['Email']) emailSet.add(row['Email'].trim());
+
+            const idStr = row['Lead ID'] || '';
+            const num = parseInt(idStr.split('-')[1]);
+            if (!isNaN(num) && num > lastId) {
+              lastId = num;
+            }
+          } catch(e) {}
+        }
+
+        if (leadsBatch.length < step) {
+          hasMore = false;
+        } else {
+          from += step;
+        }
       }
 
-      const newLeads = records.map(row => {
-        lastId++;
-        const lead_id = `L-${lastId}`;
+      const validRecords = records.filter(row => {
+        // If an explicit Lead ID is given, allow it (assume updating existing)
+        if (row['Lead ID'] && row['Lead ID'].trim() !== '') return true;
+        
+        const phone = (row['phone_number'] || row['Phone'] || '').trim();
+        const email = (row['email'] || row['Email'] || '').trim();
+
+        // Skip if Duplicate Phone or Email
+        if (phone && phoneSet.has(phone)) return false;
+        if (email && emailSet.has(email)) return false;
+        
+        // Add to sets to prevent duplicates within the same CSV payload
+        if (phone) phoneSet.add(phone);
+        if (email) emailSet.add(email);
+        
+        return true;
+      });
+
+      const newLeads = validRecords.map(row => {
+        let lead_id = row['Lead ID'] || '';
+        lead_id = lead_id.trim();
+        if (!lead_id) {
+          lastId++;
+          lead_id = `L-${lastId}`;
+        }
         const name = row['business_name'] || row['Name'] || '';
         const phone = row['phone_number'] || row['Phone'] || '';
         const email = row['email'] || row['Email'] || '';
@@ -76,9 +122,9 @@ module.exports = async function handler(req, res) {
         };
       });
 
-      // Insert all at once
+      // Upsert all at once (inserts new, updates existing)
       if (newLeads.length > 0) {
-        const { error } = await supabase.from('leads').insert(newLeads);
+        const { error } = await supabase.from('leads').upsert(newLeads);
         if (error) throw error;
       }
 
