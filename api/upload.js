@@ -63,12 +63,8 @@ module.exports = async function handler(req, res) {
       const validRecords = records;
 
       const newLeads = validRecords.map(row => {
-        let lead_id = row['Lead ID'] || '';
-        lead_id = lead_id.trim();
-        if (!lead_id) {
-          lastId++;
-          lead_id = `L-${lastId}`;
-        }
+        lastId++;
+        let lead_id = `L-${lastId}`;
         const name = row['business_name'] || row['Name'] || '';
         const phone = row['phone_number'] || row['Phone'] || '';
         const email = row['email'] || row['Email'] || '';
