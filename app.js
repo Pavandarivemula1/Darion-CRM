@@ -11,6 +11,7 @@ let currentServiceFilter = 'All';
 
 let visuallyFilteredLeads = [];
 let currentPage = 1;
+let selectedLeadIds = new Set();
 const itemsPerPage = 20;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -259,7 +260,9 @@ function renderTable() {
              actionsHtml += `<a href="tel:${cleanPhone}" class="btn-success" style="text-decoration:none; margin-left:8px;">Call</a>`;
         }
 
+        const isChecked = selectedLeadIds.has(lead['Lead ID']) ? 'checked' : '';
         tr.innerHTML = `
+            <td style="text-align: center;"><input type="checkbox" class="lead-checkbox" value="${lead['Lead ID']}" ${isChecked} onchange="toggleLeadSelection(this)" style="cursor:pointer;"></td>
             <td data-label="Lead Name" onclick="viewLead('${lead['Lead ID']}')" style="cursor:pointer;" title="Click to view/edit lead">
                 <strong style="color:var(--brand-primary);">${lead.Name || 'Unnamed Lead'}</strong>
             </td>
@@ -555,5 +558,61 @@ function renderChart(leads) {
             }]
         },
         options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15, font: {family: '-apple-system'} } } }, cutout: '0%', layout: { padding: 10 } }
+    });
+}
+
+function toggleLeadSelection(cb) {
+    if(cb.checked) selectedLeadIds.add(cb.value);
+    else selectedLeadIds.delete(cb.value);
+    updateDeleteBtnVisibility();
+}
+
+function toggleSelectAll(cb) {
+    const checkboxes = document.querySelectorAll('.lead-checkbox');
+    checkboxes.forEach(c => {
+        c.checked = cb.checked;
+        if(cb.checked) selectedLeadIds.add(c.value);
+        else selectedLeadIds.delete(c.value);
+    });
+    updateDeleteBtnVisibility();
+}
+
+function updateDeleteBtnVisibility() {
+    const btn = document.getElementById('deleteSelectedBtn');
+    const count = document.getElementById('selectedCount');
+    if(!btn) return;
+    if(selectedLeadIds.size > 0) {
+        btn.style.display = 'flex';
+        if(count) count.innerText = selectedLeadIds.size;
+    } else {
+        btn.style.display = 'none';
+        const selectAll = document.getElementById('selectAllLeads');
+        if(selectAll) selectAll.checked = false;
+    }
+}
+
+function deleteSelectedLeads() {
+    if(selectedLeadIds.size === 0) return;
+    if(!confirm(`Are you sure you want to permanently delete ${selectedLeadIds.size} leads?`)) return;
+    
+    const btn = document.getElementById('deleteSelectedBtn');
+    btn.innerHTML = 'Deleting...';
+    
+    fetch('/api/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedLeadIds) })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.error) throw new Error(data.error);
+        selectedLeadIds.clear();
+        updateDeleteBtnVisibility();
+        loadData(false);
+        btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg><span class="btn-text">Delete (<span id="selectedCount">0</span>)</span>`;
+    })
+    .catch(e => {
+        alert('Delete failed: ' + e);
+        btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg><span class="btn-text">Delete (<span id="selectedCount">${selectedLeadIds.size}</span>)</span>`;
     });
 }

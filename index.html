@@ -36,6 +36,10 @@
                     </button>
                 </div>
                 <div class="actions" style="display:flex; gap:16px; align-items:center;">
+                    <button id="deleteSelectedBtn" class="btn-outline" style="display:none; color: var(--accent-red); border-color: var(--accent-red);" onclick="deleteSelectedLeads()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        <span class="btn-text">Delete (<span id="selectedCount">0</span>)</span>
+                    </button>
                     <input type="file" id="csvUploadInput" accept=".csv" style="display:none;" />
                     <button id="uploadBtn" class="btn-primary" onclick="document.getElementById('csvUploadInput').click()">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -110,6 +114,7 @@
                             <table id="leadsTable">
                                 <thead>
                                     <tr>
+                                        <th style="width: 40px; text-align: center;"><input type="checkbox" id="selectAllLeads" onchange="toggleSelectAll(this)" style="cursor:pointer;"></th>
                                         <th>Lead Name</th>
                                         <th>Contact Info</th>
                                         <th>Region</th>
