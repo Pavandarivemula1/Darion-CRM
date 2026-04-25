@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                Simple CRM
+            </div>
+            <nav>
+                <a href="#" id="navDashboardBtn" class="active">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    Dashboard
+                </a>
+                <a href="#" id="navPipelineBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    Lead Pipeline
+                </a>
+            </nav>
+        </aside>
+        <main class="main-content">
+            <header>
+                <div class="search-bar" style="position: relative;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="searchLeads" placeholder="Search by name or phone..." style="padding-right: 40px;">
+                    <button class="mobile-filter-toggle" onclick="toggleMobileFilters()" title="Toggle Filters">
+                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                    </button>
+                </div>
+                <div class="actions" style="display:flex; gap:16px; align-items:center;">
+                    <input type="file" id="csvUploadInput" accept=".csv" style="display:none;" />
+                    <button id="uploadBtn" class="btn-primary" onclick="document.getElementById('csvUploadInput').click()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        <span class="btn-text">Upload CSV</span>
+                    </button>
+                    <div class="user-profile">
+                        <span>Admin</span>
+                        <div class="avatar">A</div>
+                    </div>
+                </div>
+            </header>
+            
+            <div id="globalFilters" class="global-filters-container mobile-hidden" style="flex: 0 0 auto;">
+                <div class="filters" style="display: flex; gap: 16px; align-items: center; padding: 16px 16px 0 16px; overflow-x: auto;">
+                    <select id="filterCity" class="modal-input" style="width: 200px; margin-top:0;" onchange="applyFilters()">
+                        <option value="All">All Regions</option>
+                    </select>
+                    <select id="filterStatus" class="modal-input" style="width: 150px; margin-top:0;" onchange="applyFilters()">
+                        <option value="All">All Statuses</option>
+                        <option value="New">New</option>
+                        <option value="Contacted">Contacted</option>
+                        <option value="Interested">Interested</option>
+                        <option value="Not Interested">Not Interested</option>
+                        <option value="Closed">Closed</option>
+                    </select>
+                    <select id="filterPriority" class="modal-input" style="width: 150px; margin-top:0;" onchange="applyFilters()">
+                        <option value="All">All Priorities</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                        <option value="Scheduled">Scheduled</option>
+                    </select>
+                    <select id="filterService" class="modal-input" style="width: 180px; margin-top:0;" onchange="applyFilters()">
+                        <option value="All">All Services</option>
+                        <option value="Needs Website">Needs Website</option>
+                        <option value="Has WhatsApp">Has WhatsApp</option>
+                    </select>
+                    <button class="btn-outline" onclick="applyFilters()">Refresh</button>
+                </div>
+            </div>
+
+            <div id="dashboardView">
+                <div class="dashboard-stats" style="margin-bottom: 24px; padding-top: 16px;">
+                    <div class="stat-card card">
+                        <h3>Total Leads</h3>
+                        <div class="value" id="totalLeads">0</div>
+                    </div>
+                    <div class="stat-card card">
+                        <h3>High Priority</h3>
+                        <div class="value hot" id="highPriorityLeads">0</div>
+                    </div>
+                    <div class="stat-card card">
+                        <h3>Due Today</h3>
+                        <div class="value warning" id="dueTodayLeads">0</div>
+                    </div>
+                    <div class="stat-card card">
+                        <h3>True Conversion Rate</h3>
+                        <div class="value success" id="conversionRate">0%</div>
+                    </div>
+                </div>
+
+                <div class="content-grid">
+                    <div class="table-container card">
+                        <div class="table-header">
+                            <h2>Active Leads</h2>
+                            <div class="live-badge" title="Data is syncing automatically in real-time">
+                                <span class="live-indicator"></span> LIVE
+                            </div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table id="leadsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Lead Name</th>
+                                        <th>Contact Info</th>
+                                        <th>Region</th>
+                                        <th>Priority</th>
+                                        <th>Status</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableBody">
+                                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">Syncing with server...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="paginationControls" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-top: 1px solid var(--border-color); background: #f9fafb; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">
+                            <button id="prevPageBtn" class="btn-outline" onclick="changePage(-1)" style="padding: 6px 12px; height: 32px; font-size: 13px;">Previous</button>
+                            <span id="pageIndicator" style="font-size: 13px; color: var(--text-muted); font-weight: 500;">Page 1 of 1</span>
+                            <button id="nextPageBtn" class="btn-outline" onclick="changePage(1)" style="padding: 6px 12px; height: 32px; font-size: 13px;">Next</button>
+                        </div>
+                    </div>
+
+                    <div class="side-panel card">
+                        <h2>Lead Demographics</h2>
+                        <canvas id="sourceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pipelineView" style="display: none; height: 100%;">
+                <div class="table-header" style="margin-bottom:0;">
+                    <h2 style="font-size: 20px; font-weight: 600;">Sales Pipeline</h2>
+                    <div class="live-badge" title="Data is syncing automatically in real-time">
+                        <span class="live-indicator"></span> LIVE
+                    </div>
+                </div>
+                <div id="pipelineFunnel"></div>
+                <div class="kanban-board" id="kanbanBoard">
+                    <!-- Columns injected by JS -->
+                </div>
+            </div>
+
+        </main>
+    </div>
+    
+    <!-- Modal -->
+    <div id="leadModal" class="modal">
+        <div class="modal-content card">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <div class="modal-header">
+                <h2 id="modalName">Lead Title</h2>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "crm-app",
+  "version": "1.0.0",
+  "description": "CRM App with Supabase and Vercel Serverless Functions",
+  "main": "app.js",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "csv-parse": "^5.5.3"
+  }
+}
