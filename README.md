@@ -1,4 +1,4 @@
-# Darion CRM by Darion Technologies
+# Darion CRM
 
 A custom-built, full-stack Customer Relationship Management (CRM) platform designed specifically for managing leads, tracking pipeline stages, and streamlining follow-up workflows.
 
