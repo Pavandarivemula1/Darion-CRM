@@ -6,7 +6,6 @@ A custom-built, full-stack Customer Relationship Management (CRM) platform desig
 
 - **Dynamic Kanban Pipeline:** Visual board for managing leads across customizable stages (New, Contacted, Cold, etc.).
 - **Smart CSV Data Uploads:** Bulk upload leads directly from a CSV file. The system automatically fetches maximum database IDs and safely provisions fresh `L-something` assignments.
-- **Intelligent Deduplication:** Prevents database bloating! The upload script intelligently scans both the CSV and the live Supabase database to detect and skip/update duplicates matching by `Phone` or `Email`. 
 - **Realtime Database Backend:** Integrated with Supabase PostgreSQL to offer instant, reliable, server-side data preservation.
 - **Serverless API Structure:** Optimized API routing via Vercel serverless functions (`/api/*`), ensuring massive scale with zero server-management overhead.
 - **Mobile First Focus:** Responsive, flex-based UI design constructed manually using Vanilla CSS (`styles.css`).

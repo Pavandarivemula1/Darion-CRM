@@ -11,7 +11,8 @@ module.exports = async function handler(req, res) {
      const { data, error } = await supabase
        .from('leads')
        .select('*')
-       .order('Lead ID', { ascending: true });
+       .order('Lead ID', { ascending: true })
+       .limit(999999);
        
      if (error) {
        console.error("Supabase Error:", error);

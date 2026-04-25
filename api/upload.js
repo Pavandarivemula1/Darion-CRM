@@ -60,23 +60,7 @@ module.exports = async function handler(req, res) {
         }
       }
 
-      const validRecords = records.filter(row => {
-        // If an explicit Lead ID is given, allow it (assume updating existing)
-        if (row['Lead ID'] && row['Lead ID'].trim() !== '') return true;
-        
-        const phone = (row['phone_number'] || row['Phone'] || '').trim();
-        const email = (row['email'] || row['Email'] || '').trim();
-
-        // Skip if Duplicate Phone or Email
-        if (phone && phoneSet.has(phone)) return false;
-        if (email && emailSet.has(email)) return false;
-        
-        // Add to sets to prevent duplicates within the same CSV payload
-        if (phone) phoneSet.add(phone);
-        if (email) emailSet.add(email);
-        
-        return true;
-      });
+      const validRecords = records;
 
       const newLeads = validRecords.map(row => {
         let lead_id = row['Lead ID'] || '';
