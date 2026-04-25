@@ -351,10 +351,10 @@ function renderPipeline() {
         if(status === 'New') col.classList.add('expanded');
         
         col.innerHTML = `
-            <div class="kanban-column-header" onclick="this.parentElement.classList.toggle('expanded')" style="cursor:pointer; user-select:none;">
+            <div class="kanban-column-header" onclick="this.parentElement.classList.toggle('expanded')" style="cursor:pointer; user-select:none; border-left: 4px solid ${c.color};">
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <span>${c.title}</span>
-                    <span class="kanban-count">${leadsInStatus.length}</span>
+                    <span style="color: ${c.color};">${c.title}</span>
+                    <span class="kanban-count" style="background: ${c.color}; color: #ffffff;">${leadsInStatus.length}</span>
                 </div>
                 <div class="mobile-chevron">▼</div>
             </div>
