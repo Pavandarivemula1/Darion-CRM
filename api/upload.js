@@ -32,10 +32,14 @@ module.exports = async function handler(req, res) {
       while (hasMore) {
         const { data: leadsBatch, error } = await supabase
           .from('leads')
-          .select('Lead ID, Phone, Email')
+          .select('"Lead ID", Phone, Email')
           .range(from, from + step - 1);
 
-        if (error || !leadsBatch || leadsBatch.length === 0) {
+        if (error) {
+          console.error("Pagination error:", error);
+          throw new Error(error.message || String(error));
+        }
+        if (!leadsBatch || leadsBatch.length === 0) {
           hasMore = false;
           break;
         }
