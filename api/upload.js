@@ -69,6 +69,13 @@ module.exports = async function handler(req, res) {
         const phone = row['phone_number'] || row['Phone'] || '';
         const email = row['email'] || row['Email'] || '';
         const location = row['address'] || row['Location'] || '';
+        
+        let status = 'New';
+        if ((phone && phoneSet.has(phone.trim())) || (email && emailSet.has(email.trim()))) {
+            status = 'Duplicate';
+        }
+        if (phone) phoneSet.add(phone.trim());
+        if (email) emailSet.add(email.trim());
         const category = row['category'] || row['Category'] || '';
         
         return {
@@ -78,7 +85,7 @@ module.exports = async function handler(req, res) {
             'Email': email.trim(),
             'Source': 'Uploaded CSV',
             'Location': location.trim(),
-            'Lead Status': 'New',
+            'Lead Status': status,
             'Combined Score': '',
             'Category (Pitch Angle)': category.trim(),
             'Website': row['website'] || '',
@@ -92,7 +99,7 @@ module.exports = async function handler(req, res) {
             'Follow-Up Count': '0',
             'Follow-Up Notes': '',
             'Preferred Contact': phone ? 'Phone' : 'Email',
-            'Stage': 'New',
+            'Stage': status,
             'Assigned Salesperson': '',
             'Expected Value': '',
             'Probability (%)': '',
