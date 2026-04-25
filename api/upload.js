@@ -72,6 +72,11 @@ module.exports = async function handler(req, res) {
         
         
         let status = 'New';
+        if ((phone && phoneSet.has(phone.trim())) || (email && emailSet.has(email.trim()))) {
+            status = 'Duplicate';
+        }
+        if (phone) phoneSet.add(phone.trim());
+        if (email) emailSet.add(email.trim());
         const category = row['category'] || row['Category'] || '';
         
         return {

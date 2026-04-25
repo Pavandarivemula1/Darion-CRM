@@ -314,7 +314,8 @@ function renderPipeline() {
         { id: 'Contacted', title: 'Contacted', color: '#eab308' },
         { id: 'Interested', title: 'Interested', color: '#84cc16' },
         { id: 'Not Interested', title: 'Not Interested', color: 'var(--accent-red)' },
-        { id: 'Closed', title: 'Closed', color: '#10b981' }
+        { id: 'Closed', title: 'Closed', color: '#10b981' },
+        { id: 'Duplicate', title: 'Duplicate', color: '#8b5cf6' }
     ];
 
     let counts = {};
@@ -456,6 +457,7 @@ function viewLead(id) {
                     <option value="Interested" ${lead['Lead Status']=='Interested'?'selected':''}>Interested</option>
                     <option value="Not Interested" ${lead['Lead Status']=='Not Interested'?'selected':''}>Not Interested</option>
                     <option value="Closed" ${lead['Lead Status']=='Closed'?'selected':''}>Closed/Won</option>
+                    <option value="Duplicate" ${lead['Lead Status']=='Duplicate'?'selected':''}>Duplicate</option>
                 </select>
             </div>
             <div class="detail-item"><span class="label">Priority</span>
