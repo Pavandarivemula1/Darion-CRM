@@ -128,10 +128,18 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div id="paginationControls" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-top: 1px solid var(--border-color); background: #f9fafb; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">
-                            <button id="prevPageBtn" class="btn-outline" onclick="changePage(-1)" style="padding: 6px 12px; height: 32px; font-size: 13px;">Previous</button>
-                            <span id="pageIndicator" style="font-size: 13px; color: var(--text-muted); font-weight: 500;">Page 1 of 1</span>
-                            <button id="nextPageBtn" class="btn-outline" onclick="changePage(1)" style="padding: 6px 12px; height: 32px; font-size: 13px;">Next</button>
+                        <div id="paginationControls" class="pagination-container">
+                            <span id="pageIndicator" class="pagination-info">Page 1 of 1</span>
+                            <div class="pagination-actions">
+                                <button id="prevPageBtn" class="btn-icon" onclick="changePage(-1)" aria-label="Previous Page">
+                                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                                    Previous
+                                </button>
+                                <button id="nextPageBtn" class="btn-icon" onclick="changePage(1)" aria-label="Next Page">
+                                    Next
+                                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
 

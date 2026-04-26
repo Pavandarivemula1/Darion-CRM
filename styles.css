@@ -903,3 +903,56 @@ tr:last-child td { border-bottom: none; }
         height: 20px;
     }
 }
+
+/* Pagination UI Styles */
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-color);
+    background: #f9fafb;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+.pagination-info {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+.pagination-actions {
+    display: flex;
+    gap: 8px;
+}
+.btn-icon {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 6px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-icon:hover:not(:disabled) {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+.btn-icon:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.btn-icon svg {
+    width: 16px;
+    height: 16px;
+}
+@media (max-width: 768px) {
+    .pagination-container {
+        flex-direction: column;
+        gap: 16px;
+    }
+}

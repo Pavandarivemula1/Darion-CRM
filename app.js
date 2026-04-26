@@ -285,14 +285,8 @@ function updatePagination(curr, total, totalCount) {
     const prevBtn = document.getElementById('prevPageBtn');
     const nextBtn = document.getElementById('nextPageBtn');
     
-    prevBtn.disabled = curr <= 1;
-    nextBtn.disabled = curr >= total;
-    
-    prevBtn.style.opacity = curr <= 1 ? '0.4' : '1';
-    prevBtn.style.cursor = curr <= 1 ? 'not-allowed' : 'pointer';
-    
-    nextBtn.style.opacity = curr >= total ? '0.4' : '1';
-    nextBtn.style.cursor = curr >= total ? 'not-allowed' : 'pointer';
+    if (prevBtn) prevBtn.disabled = curr <= 1;
+    if (nextBtn) nextBtn.disabled = curr >= total;
 }
 
 function changePage(offset) {
