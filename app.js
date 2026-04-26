@@ -181,7 +181,8 @@ function loadData(isSilentPolling = false) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">Fetching records...</td></tr>';
     }
     
-    supabase.from('leads').select('*').order('Lead ID')
+    // Bulletproof fetch: no `.order` on network layer to bypass SDK column-name-spacing bugs
+    supabase.from('leads').select('*')
     .then(({ data, error }) => {
         if(error) throw new Error(error.message);
         
@@ -192,14 +193,21 @@ function loadData(isSilentPolling = false) {
         lastDataFingerprint = fingerprint;
 
         globalLeads = data || [];
+        // Local sort to avoid ".order('Lead ID')" syntax bugs that might break Supabase SDK
+        globalLeads.sort((a,b) => {
+            const numA = parseInt((a['Lead ID']||'').split('-')[1]) || 0;
+            const numB = parseInt((b['Lead ID']||'').split('-')[1]) || 0;
+            return numA - numB;
+        });
+
         populateCityFilter(globalLeads); 
         applyFilters(); 
         renderPipeline(); 
     })
     .catch(err => {
-        console.error(err);
+        console.error("SUPABASE FETCH ERROR:", err);
         if(!isSilentPolling) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 40px;">Connection failed. Is Supabase configured?</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 40px;">Connection failed. Error: <strong>${err.message || err.toString()}</strong></td></tr>`;
         }
     });
 }
@@ -251,9 +259,12 @@ function applyFilters() {
     currentServiceFilter = serviceSelect ? serviceSelect.value : 'All';
 
     visuallyFilteredLeads = globalLeads.filter(lead => {
-        const matchSearch = 
-            (lead.Name && lead.Name.toLowerCase().includes(currentSearch)) || 
-            (lead.Phone && lead.Phone.toLowerCase().includes(currentSearch));
+        let matchSearch = true;
+        if (currentSearch && currentSearch.trim() !== '') {
+            matchSearch = 
+                (lead.Name && lead.Name.toLowerCase().includes(currentSearch)) || 
+                (lead.Phone && lead.Phone.toLowerCase().includes(currentSearch));
+        }
             
         const matchCity = (currentCityFilter === 'All') || (lead._computedCity === currentCityFilter);
         
