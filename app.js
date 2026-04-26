@@ -389,8 +389,10 @@ function renderPipeline() {
             }
 
             let searchQuery = encodeURIComponent(lead.Name || lead.Phone || lead.Email || '');
-            let searchLink = `<a href="https://www.google.com/search?q=${searchQuery}" target="_blank" title="Search Google" style="color:var(--brand-primary); text-decoration:none; display:flex; align-items:center;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            let shortName = lead.Name ? (lead.Name.length > 12 ? lead.Name.substring(0,10)+'..' : lead.Name) : 'Profile';
+            let searchLink = `<a href="https://www.google.com/search?q=${searchQuery}" target="_blank" title="Search Google" style="color:var(--brand-primary); background:#eff6ff; padding: 4px 8px; border-radius: 4px; text-decoration:none; display:flex; align-items:center; font-size: 11px; font-weight: 600;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                Search ${shortName}
             </a>`;
 
             const safeName = (lead.Name || 'Unnamed').replace(/'/g, "\\'").replace(/"/g, '&quot;');
@@ -455,7 +457,13 @@ function viewLead(id) {
     const lead = globalLeads.find(l => l['Lead ID'] === id);
     if(!lead) return;
 
-    document.getElementById('modalName').innerText = lead.Name || 'Unnamed Lead';
+    let searchQ = encodeURIComponent(lead.Name || lead.Phone || '');
+    document.getElementById('modalName').innerHTML = `
+        <span style="vertical-align: middle;">${lead.Name || 'Unnamed Lead'}</span>
+        <a href="https://www.google.com/search?q=${searchQ}" target="_blank" style="margin-left:12px; font-size:13px; font-weight:600; padding:6px 12px; background:#eff6ff; color:var(--brand-primary); border-radius:6px; text-decoration:none; display:inline-flex; align-items:center; vertical-align: middle;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Google Search
+        </a>
+    `;
     const body = document.getElementById('modalBody');
     
     body.innerHTML = `
