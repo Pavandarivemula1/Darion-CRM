@@ -1,3 +1,8 @@
+// === SUPABASE SETUP ===
+const SUPABASE_URL = 'https://ajrtewupbfupxpwwvrcz.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_92ZS2ML3dAMDN9inMpjwqA_her1Be4K';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 let globalLeads = [];
 let chartInstance = null;
 let editingLeadId = null;
@@ -47,22 +52,86 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = document.getElementById('uploadBtn');
         btn.innerText = 'Processing...';
         
-        fetch('/api/upload', {
-            method: 'POST',
-            body: file,
-            headers: { 'Content-Type': 'text/csv' }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if(data.error) throw new Error(data.error);
-            showToast(`✅ Imported ${data.added} new leads successfully`, 'success');
-            btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Upload CSV`;
-            document.getElementById('csvUploadInput').value = '';
-            loadData(false);
-        })
-        .catch(err => {
-            showToast('❌ Upload failed: ' + err, 'error');
-            btn.innerHTML = 'Upload CSV';
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: async function(results) {
+                const newLeads = [];
+                let lastId = 1000;
+                globalLeads.forEach(l => {
+                    if (l['Lead ID']) {
+                        let num = parseInt(l['Lead ID'].split('-')[1]);
+                        if (!isNaN(num)) lastId = Math.max(lastId, num);
+                    }
+                });
+
+                results.data.forEach(row => {
+                    lastId++;
+                    let name = row['business_name'] || row['Name'] || '';
+                    let phone = row['phone_number'] || row['Phone'] || '';
+                    let email = row['email'] || row['Email'] || '';
+                    let location = row['address'] || row['Location'] || '';
+                    let category = row['category'] || row['Category'] || '';
+                    
+                    newLeads.push({
+                        'Lead ID': `L-${lastId}`,
+                        'Name': name.trim(),
+                        'Phone': phone.trim(),
+                        'Email': email.trim(),
+                        'Source': 'Uploaded CSV',
+                        'Location': location.trim(),
+                        'Lead Status': 'New',
+                        'Combined Score': '',
+                        'Category (Pitch Angle)': category.trim(),
+                        'Website': row['website'] || '',
+                        'Has WhatsApp': row['has_whatsapp'] || '',
+                        'Is Website Poor': row['is_website_poor'] || '',
+                        'Budget': '',
+                        'Requirement Type': '',
+                        'Urgency Level': '',
+                        'Last Contacted Date': '',
+                        'Next Follow-Up Date': '',
+                        'Follow-Up Count': '0',
+                        'Follow-Up Notes': '',
+                        'Preferred Contact': phone ? 'Phone' : 'Email',
+                        'Stage': 'New',
+                        'Assigned Salesperson': '',
+                        'Expected Value': '',
+                        'Probability (%)': '',
+                        'Days Since Contact': '',
+                        'Follow-Up Priority (Auto)': 'Medium',
+                        'Reminder Flag (Auto)': 'Scheduled'
+                    });
+                });
+
+                if (newLeads.length === 0) {
+                    showToast('No valid rows found to upload', 'error');
+                    btn.innerHTML = 'Upload CSV';
+                    return;
+                }
+
+                // Chunk uploads max 1000 at a time for performance
+                let successCount = 0;
+                for (let i = 0; i < newLeads.length; i += 1000) {
+                    const chunk = newLeads.slice(i, i + 1000);
+                    const { error } = await supabase.from('leads').insert(chunk);
+                    if (error) {
+                        showToast('❌ Upload failed: ' + error.message, 'error');
+                        btn.innerHTML = 'Upload CSV';
+                        return;
+                    }
+                    successCount += chunk.length;
+                }
+
+                showToast(`✅ Imported ${successCount} new leads successfully`, 'success');
+                btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Upload CSV`;
+                document.getElementById('csvUploadInput').value = '';
+                loadData(false);
+            },
+            error: function(error) {
+                showToast('❌ CSV Parse fail: ' + error.message, 'error');
+                btn.innerHTML = 'Upload CSV';
+            }
         });
     });
 
@@ -112,10 +181,9 @@ function loadData(isSilentPolling = false) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">Fetching records...</td></tr>';
     }
     
-    fetch('/api/leads')
-    .then(res => res.json())
-    .then(data => {
-        if(data.error) throw new Error(data.error);
+    supabase.from('leads').select('*').order('Lead ID')
+    .then(({ data, error }) => {
+        if(error) throw new Error(error.message);
         
         const fingerprint = JSON.stringify(data);
         if(isSilentPolling && fingerprint === lastDataFingerprint) {
@@ -123,7 +191,7 @@ function loadData(isSilentPolling = false) {
         }
         lastDataFingerprint = fingerprint;
 
-        globalLeads = data;
+        globalLeads = data || [];
         populateCityFilter(globalLeads); 
         applyFilters(); 
         renderPipeline(); 
@@ -131,7 +199,7 @@ function loadData(isSilentPolling = false) {
     .catch(err => {
         console.error(err);
         if(!isSilentPolling) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 40px;">Connection failed. Is the server running?</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 40px;">Connection failed. Is Supabase configured?</td></tr>`;
         }
     });
 }
@@ -473,14 +541,12 @@ function dropLead(ev, targetStatus) {
 
     const leadUpdate = { 'Lead ID': leadId, 'Lead Status': targetStatus };
 
-    // Fire network request. Polling automatically repaints. 
-    fetch('/api/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(leadUpdate)
-    })
-    .then(() => showToast('✅ Status updated', 'success'))
-    .catch(e => showToast('❌ Network error updating status', 'error'));
+    // Fire network request
+    supabase.from('leads').update({ 'Lead Status': targetStatus }).eq('Lead ID', leadId)
+    .then(({ error }) => {
+        if(error) showToast('❌ Network error updating status', 'error');
+        else showToast('✅ Status updated', 'success');
+    });
 }
 
 // === MODAL === //
@@ -560,19 +626,14 @@ function saveLead() {
         'Follow-Up Notes': combinedNotes
     };
 
-    fetch('/api/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(leadUpdate)
-    })
-    .then(r => r.json())
-    .then(data => {
-        if(data.status === 'success') {
+    supabase.from('leads').update(leadUpdate).eq('Lead ID', editingLeadId)
+    .then(({ error }) => {
+        if(!error) {
             showToast('✅ Lead saved successfully', 'success');
             closeModal();
             loadData(); 
         } else {
-            showToast('❌ Error: ' + data.error, 'error');
+            showToast('❌ Error: ' + error.message, 'error');
             btn.innerText = 'Save Changes';
         }
     })
@@ -662,14 +723,9 @@ function deleteSelectedLeads() {
     const btn = document.getElementById('deleteSelectedBtn');
     btn.innerHTML = 'Deleting...';
     
-    fetch('/api/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: Array.from(selectedLeadIds) })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if(data.error) throw new Error(data.error);
+    supabase.from('leads').delete().in('Lead ID', Array.from(selectedLeadIds))
+    .then(({ error }) => {
+        if(error) throw new Error(error.message);
         showToast(`🗑️ Deleted ${selectedLeadIds.size} leads`, 'success');
         selectedLeadIds.clear();
         updateDeleteBtnVisibility();
@@ -786,13 +842,11 @@ window.quickUpdateStatus = function(id, status) {
     const lead = globalLeads.find(l => l['Lead ID'] === id);
     if (!lead || lead['Lead Status'] === status) return;
     lead['Lead Status'] = status; // Optimistic update
-    fetch('/api/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 'Lead ID': id, 'Lead Status': status })
-    })
-    .then(() => showToast(`✅ Status → ${status}`, 'success'))
-    .catch(() => showToast('❌ Failed to update status', 'error'));
+    supabase.from('leads').update({ 'Lead Status': status }).eq('Lead ID', id)
+    .then(({ error }) => {
+        if(error) showToast('❌ Failed to update status', 'error');
+        else showToast(`✅ Status → ${status}`, 'success');
+    });
 };
 
 // === NEW LEAD MODAL === //
@@ -820,29 +874,53 @@ window.saveNewLead = function() {
     btn.innerText = 'Creating...';
     btn.disabled = true;
 
+    const lastIdNum = globalLeads.reduce((max, lead) => {
+        if (!lead['Lead ID']) return max;
+        const parts = lead['Lead ID'].split('-');
+        if(parts.length > 1 && !isNaN(parts[1])) return Math.max(max, parseInt(parts[1]));
+        return max;
+    }, 1000);
+    const newId = `L-${lastIdNum + 1}`;
+
     const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true });
     const notes = document.getElementById('nlNotes').value.trim();
     const initialNote = notes ? `[${timestamp}] ${notes}` : '';
+    const phone = document.getElementById('nlPhone').value.trim();
 
     const payload = {
-        Name:     name,
-        Phone:    document.getElementById('nlPhone').value.trim(),
-        Email:    document.getElementById('nlEmail').value.trim(),
-        Location: document.getElementById('nlLocation').value.trim(),
+        'Lead ID': newId,
+        'Name':     name,
+        'Phone':    phone,
+        'Email':    document.getElementById('nlEmail').value.trim(),
+        'Source':   'Manual Entry',
+        'Location': document.getElementById('nlLocation').value.trim(),
+        'Lead Status': 'New',
+        'Combined Score': '',
         'Category (Pitch Angle)': document.getElementById('nlCategory').value.trim(),
-        'Follow-Up Priority (Auto)': document.getElementById('nlPriority').value,
+        'Website': '',
+        'Has WhatsApp': '',
+        'Is Website Poor': '',
+        'Budget': '',
+        'Requirement Type': '',
+        'Urgency Level': '',
+        'Last Contacted Date': '',
+        'Next Follow-Up Date': '',
+        'Follow-Up Count': '0',
         'Follow-Up Notes': initialNote,
+        'Preferred Contact': phone ? 'Phone' : 'Email',
+        'Stage': 'New',
+        'Assigned Salesperson': '',
+        'Expected Value': '',
+        'Probability (%)': '',
+        'Days Since Contact': '',
+        'Follow-Up Priority (Auto)': document.getElementById('nlPriority').value,
+        'Reminder Flag (Auto)': 'Scheduled'
     };
 
-    fetch('/api/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.error) throw new Error(data.error);
-        showToast(`✅ Lead "${name}" created (${data.lead_id})`, 'success');
+    supabase.from('leads').insert([payload])
+    .then(({ error }) => {
+        if (error) throw new Error(error.message);
+        showToast(`✅ Lead "${name}" created (${newId})`, 'success');
         closeNewLeadModal();
         loadData(false);
     })
