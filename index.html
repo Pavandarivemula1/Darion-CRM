@@ -40,6 +40,14 @@
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         <span class="btn-text">Delete (<span id="selectedCount">0</span>)</span>
                     </button>
+                    <button id="exportBtn" class="btn-outline" onclick="exportFilteredCSV()" title="Export filtered leads as CSV">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span class="btn-text">Export CSV</span>
+                    </button>
+                    <button id="newLeadBtn" class="btn-primary" onclick="openNewLeadModal()" title="Add a new lead manually" style="background: #7c3aed;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        <span class="btn-text">New Lead</span>
+                    </button>
                     <input type="file" id="csvUploadInput" accept=".csv" style="display:none;" />
                     <button id="uploadBtn" class="btn-primary" onclick="document.getElementById('csvUploadInput').click()">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -78,6 +86,9 @@
                         <option value="Needs Website">Needs Website</option>
                         <option value="Has WhatsApp">Has WhatsApp</option>
                     </select>
+                    <button id="dueTodayBtn" class="btn-outline" onclick="filterDueToday()" title="Show only leads due today">
+                        🔔 Due Today <span id="dueTodayBadge" class="due-today-badge" style="display:none;">0</span>
+                    </button>
                     <button class="btn-outline" onclick="applyFilters()">Refresh</button>
                 </div>
             </div>
@@ -186,6 +197,38 @@
         </svg>
     </button>
 
+    <!-- New Lead Modal -->
+    <div id="newLeadModal" class="modal">
+        <div class="modal-content card">
+            <span class="close-btn" onclick="closeNewLeadModal()">&times;</span>
+            <div class="modal-header">
+                <h2>➕ Add New Lead</h2>
+            </div>
+            <div class="detail-grid">
+                <div class="detail-item"><span class="label">Business / Lead Name *</span><input id="nlName" class="modal-input" placeholder="e.g. Raj Sweets" /></div>
+                <div class="detail-item"><span class="label">Phone Number</span><input id="nlPhone" class="modal-input" placeholder="+91 9876543210" /></div>
+                <div class="detail-item"><span class="label">Email Address</span><input id="nlEmail" class="modal-input" placeholder="contact@example.com" /></div>
+                <div class="detail-item"><span class="label">Location / Address</span><input id="nlLocation" class="modal-input" placeholder="Guntur, Andhra Pradesh" /></div>
+                <div class="detail-item"><span class="label">Category / Pitch Angle</span><input id="nlCategory" class="modal-input" placeholder="Restaurant, Salon, etc." /></div>
+                <div class="detail-item"><span class="label">Priority</span>
+                    <select id="nlPriority" class="modal-input">
+                        <option value="🔴 High">High</option>
+                        <option value="🟡 Medium" selected>Medium</option>
+                        <option value="🟢 Low">Low</option>
+                    </select>
+                </div>
+            </div>
+            <div class="detail-item" style="margin-top:16px;"><span class="label">Notes / Initial Remarks</span>
+                <textarea id="nlNotes" class="modal-input" placeholder="First impression, source, how you found this lead..." style="height:70px; resize:vertical; margin-top:6px;"></textarea>
+            </div>
+            <div style="margin-top: 24px; display:flex; justify-content: flex-end; gap:12px;">
+                <button class="btn-outline" onclick="closeNewLeadModal()">Cancel</button>
+                <button class="btn-primary" id="saveNewLeadBtn" onclick="saveNewLead()" style="background:#7c3aed;">Create Lead</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
     <script src="app.js"></script>
 </body>
 </html>

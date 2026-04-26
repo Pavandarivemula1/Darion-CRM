@@ -956,3 +956,63 @@ tr:last-child td { border-bottom: none; }
         gap: 16px;
     }
 }
+
+/* ---- Toast Notifications ---- */
+#toast-container {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+@media (max-width: 768px) {
+    #toast-container { bottom: 80px; right: 12px; left: 12px; }
+}
+.toast {
+    padding: 12px 18px;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    animation: toastIn 0.25s ease;
+    pointer-events: auto;
+    max-width: 340px;
+}
+.toast.success { background: #10b981; }
+.toast.error   { background: #ef4444; }
+.toast.info    { background: #3b82f6; }
+.toast.warning { background: #f59e0b; }
+@keyframes toastIn {
+    from { transform: translateY(16px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ---- Inline Status Select ---- */
+.inline-select {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--text-main);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 8px;
+    cursor: pointer;
+    appearance: auto;
+}
+.inline-select:focus { outline: none; border-color: var(--brand-primary); }
+
+/* ---- Due Today Button Badge ---- */
+.due-today-badge {
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 7px;
+    margin-left: 6px;
+}
+

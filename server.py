@@ -173,6 +173,75 @@ class CRMHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
 
+        elif self.path == '/api/create':
+            try:
+                content_length = int(self.headers['Content-Length'])
+                payload = json.loads(self.rfile.read(content_length).decode('utf-8'))
+
+                with open(DATA_FILE, 'r', encoding='utf-8') as f:
+                    existing_reader = csv.DictReader(f)
+                    fieldnames = existing_reader.fieldnames
+                    existing_leads = list(existing_reader)
+
+                # Generate next ID
+                last_id = 1000
+                if existing_leads:
+                    try:
+                        last_id = max(int(r.get('Lead ID','L-1000').split('-')[1]) for r in existing_leads if r.get('Lead ID','').startswith('L-'))
+                    except:
+                        pass
+                new_id = f"L-{last_id + 1}"
+
+                import datetime
+                today = datetime.date.today().isoformat()
+                new_lead = {
+                    'Lead ID': new_id,
+                    'Name': payload.get('Name', '').strip(),
+                    'Phone': payload.get('Phone', '').strip(),
+                    'Email': payload.get('Email', '').strip(),
+                    'Source': 'Manual Entry',
+                    'Location': payload.get('Location', '').strip(),
+                    'Lead Status': 'New',
+                    'Combined Score': '',
+                    'Category (Pitch Angle)': payload.get('Category (Pitch Angle)', '').strip(),
+                    'Website': payload.get('Website', ''),
+                    'Has WhatsApp': '',
+                    'Is Website Poor': '',
+                    'Budget': '',
+                    'Requirement Type': '',
+                    'Urgency Level': '',
+                    'Last Contacted Date': '',
+                    'Next Follow-Up Date': '',
+                    'Follow-Up Count': '0',
+                    'Follow-Up Notes': payload.get('Follow-Up Notes', ''),
+                    'Preferred Contact': 'Phone' if payload.get('Phone') else 'Email',
+                    'Stage': 'New',
+                    'Assigned Salesperson': '',
+                    'Expected Value': '',
+                    'Probability (%)': '',
+                    'Days Since Contact': '',
+                    'Follow-Up Priority (Auto)': payload.get('Follow-Up Priority (Auto)', '🟡 Medium'),
+                    'Reminder Flag (Auto)': 'Scheduled'
+                }
+
+                existing_leads.append(new_lead)
+
+                with open(DATA_FILE, 'w', encoding='utf-8', newline='') as f:
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
+                    writer.writeheader()
+                    writer.writerows(existing_leads)
+
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'status': 'success', 'lead_id': new_id}).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
+
+
+
 if __name__ == "__main__":
     import socket
     def get_local_ip():

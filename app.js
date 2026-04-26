@@ -8,19 +8,36 @@ let currentCityFilter = 'All';
 let currentStatusFilter = 'All';
 let currentPriorityFilter = 'All';
 let currentServiceFilter = 'All';
+let dueTodayMode = false;
 
 let visuallyFilteredLeads = [];
 let currentPage = 1;
 let selectedLeadIds = new Set();
 const itemsPerPage = 20;
 
+// === TOAST NOTIFICATIONS === //
+function showToast(msg, type = 'info', duration = 3000) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    container.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, duration);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
     loadData(false);
 
+    let _searchTimer;
     document.getElementById('searchLeads').addEventListener('input', (e) => {
-        currentSearch = e.target.value.toLowerCase();
-        applyFilters();
+        clearTimeout(_searchTimer);
+        _searchTimer = setTimeout(() => {
+            currentSearch = e.target.value.toLowerCase();
+            dueTodayMode = false;
+            applyFilters();
+        }, 300);
     });
 
     document.getElementById('csvUploadInput').addEventListener('change', (e) => {
@@ -38,18 +55,18 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(res => res.json())
         .then(data => {
             if(data.error) throw new Error(data.error);
-            alert(`Successfully imported ${data.added} new leads.`);
-            btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Upload CSV Data`;
+            showToast(`✅ Imported ${data.added} new leads successfully`, 'success');
+            btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Upload CSV`;
             document.getElementById('csvUploadInput').value = '';
             loadData(false);
         })
         .catch(err => {
-            alert('Upload failed: ' + err);
-            btn.innerHTML = 'Upload CSV Data';
+            showToast('❌ Upload failed: ' + err, 'error');
+            btn.innerHTML = 'Upload CSV';
         });
     });
 
-    setInterval(() => loadData(true), 1500); 
+    setInterval(() => loadData(true), 15000);
 });
 
 function initNavigation() {
@@ -209,12 +226,18 @@ function updateDashboard(leads) {
     const highPriority = leads.filter(l => l['Follow-Up Priority (Auto)'] && l['Follow-Up Priority (Auto)'].includes('High')).length;
     document.getElementById('highPriorityLeads').innerText = highPriority;
     const hotStr = new Date().toISOString().split('T')[0];
-    const dueToday = leads.filter(l => {
+    const dueTodayCount = globalLeads.filter(l => {
         let flag = l['Reminder Flag (Auto)'] || '';
         let nextD = l['Next Follow-Up Date'] || '';
         return flag.includes('DUE TODAY') || nextD.startsWith(hotStr);
     }).length;
-    document.getElementById('dueTodayLeads').innerText = dueToday;
+    document.getElementById('dueTodayLeads').innerText = dueTodayCount;
+    // Update the Due Today badge in filter bar
+    const badge = document.getElementById('dueTodayBadge');
+    if (badge) {
+        badge.textContent = dueTodayCount;
+        badge.style.display = dueTodayCount > 0 ? 'inline' : 'none';
+    }
     let closedLeads = leads.filter(l => l['Lead Status'] === 'Closed').length;
     let rate = '0%';
     if(leads.length > 0) rate = ((closedLeads / leads.length) * 100).toFixed(1) + '%';
@@ -258,6 +281,9 @@ function renderTable() {
         if(lead.Phone && lead.Phone.trim().length >= 4) {
              let cleanPhone = lead.Phone.replace(/[^0-9+]/g, '');
              actionsHtml += `<a href="tel:${cleanPhone}" class="btn-success" style="text-decoration:none; margin-left:8px;">Call</a>`;
+             actionsHtml += `<a href="https://wa.me/${cleanPhone}" target="_blank" class="btn-outline" style="text-decoration:none; margin-left:8px; color:#25D366; border-color:#25D366;" title="WhatsApp">
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366" stroke="none"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+             </a>`;
         }
 
         const isChecked = selectedLeadIds.has(lead['Lead ID']) ? 'checked' : '';
@@ -270,7 +296,13 @@ function renderTable() {
             <td data-label="Contact"><div style="font-size:13px;">${lead.Phone || lead.Email || 'No info'}</div></td>
             <td data-label="Region"><span style="color:var(--text-muted); font-size: 13px;">${region}</span></td>
             <td data-label="Priority"><span class="badge ${badgeClass}">${cleanPriority}</span></td>
-            <td data-label="Status"><span class="badge new">${statusText}</span></td>
+            <td data-label="Status">
+                <select class="inline-select" onchange="quickUpdateStatus('${lead['Lead ID']}', this.value)">
+                    ${['New','Contacted','Interested','Not Interested','Closed','Duplicate'].map(s =>
+                        `<option value="${s}" ${s===statusText?'selected':''}>${s}</option>`
+                    ).join('')}
+                </select>
+            </td>
             <td data-label="Manage" style="display:flex; justify-content:flex-end;">${actionsHtml}</td>
         `;
         tbody.appendChild(tr);
@@ -375,10 +407,14 @@ function renderPipeline() {
             let badgeClass =  cleanPriority.includes('High') ? 'high' : (cleanPriority.includes('Medium') ? 'medium' : 'low');
             
             let callLink = '';
+            let waLink = '';
             if(lead.Phone && lead.Phone.trim().length >= 4) {
                 let cleanPhone = lead.Phone.replace(/[^0-9+]/g, '');
                 callLink = `<a href="tel:${cleanPhone}" title="Call" style="color:var(--accent-green); text-decoration:none; display:flex; align-items:center;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                </a>`;
+                waLink = `<a href="https://wa.me/${cleanPhone}" target="_blank" title="WhatsApp" style="color:#25D366; text-decoration:none; display:flex; align-items:center;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366" stroke="none"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                 </a>`;
             }
 
@@ -396,8 +432,9 @@ function renderPipeline() {
                 <div class="kc-meta" style="margin-bottom: 12px; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px;">${lead.Phone || lead.Email || 'No contact'}</div>
                 <div class="kc-footer" style="border-top: none; padding-top: 0;">
                     <span class="badge ${badgeClass}">${cleanPriority}</span>
-                    <div style="display:flex; gap:16px; align-items:center;">
+                    <div style="display:flex; gap:10px; align-items:center;">
                         ${searchLink}
+                        ${waLink}
                         ${callLink}
                         <button onclick="viewLead('${lead['Lead ID']}'); return false;" style="background:var(--brand-primary); color:#fff; border:none; border-radius:4px; padding:4px 12px; font-size:12px; font-weight:600; cursor:pointer;">Edit</button>
                     </div>
@@ -442,7 +479,8 @@ function dropLead(ev, targetStatus) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(leadUpdate)
     })
-    .catch(e => alert('Network Error updating Database!'));
+    .then(() => showToast('✅ Status updated', 'success'))
+    .catch(e => showToast('❌ Network error updating status', 'error'));
 }
 
 // === MODAL === //
@@ -486,8 +524,10 @@ function viewLead(id) {
             </div>
         </div>
         <div class="divider"></div>
-        <div class="detail-item" style="grid-column: 1 / -1;"><span class="label">Notes / Next Steps</span>
-            <textarea id="editNotes" class="modal-input" placeholder="Type notes here..." style="height: 80px; resize: vertical;">${lead['Follow-Up Notes'] || ''}</textarea>
+        <div class="detail-item" style="grid-column: 1 / -1;">
+            <span class="label">Activity Log / Notes</span>
+            ${lead['Follow-Up Notes'] ? `<div style="background:#f9fafb; border:1px solid var(--border-color); border-radius:6px; padding:10px 12px; font-size:12px; color:var(--text-muted); white-space:pre-wrap; max-height:100px; overflow-y:auto; margin-bottom:8px; margin-top:6px;">${lead['Follow-Up Notes']}</div>` : ''}
+            <textarea id="editNotes" class="modal-input" placeholder="Add a new note (will be timestamped and prepended)..." style="height: 70px; resize: vertical; margin-top:${lead['Follow-Up Notes'] ? '0' : '6px'};"></textarea>
         </div>
         <div style="margin-top: 24px; display:flex; justify-content: flex-end;">
             <button class="btn-primary" id="saveLeadBtn" onclick="saveLead()">Save Changes</button>
@@ -501,6 +541,15 @@ function saveLead() {
     if(!editingLeadId) return;
     const btn = document.getElementById('saveLeadBtn');
     btn.innerText = 'Saving...';
+
+    const lead = globalLeads.find(l => l['Lead ID'] === editingLeadId);
+    const newNoteText = (document.getElementById('editNotes').value || '').trim();
+    let combinedNotes = lead ? (lead['Follow-Up Notes'] || '') : '';
+    if (newNoteText) {
+        const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true });
+        const entry = `[${timestamp}] ${newNoteText}`;
+        combinedNotes = combinedNotes ? `${entry}\n---\n${combinedNotes}` : entry;
+    }
     
     const leadUpdate = {
         'Lead ID': editingLeadId,
@@ -508,7 +557,7 @@ function saveLead() {
         'Email': document.getElementById('editEmail').value,
         'Lead Status': document.getElementById('editStatus').value,
         'Follow-Up Priority (Auto)': document.getElementById('editPriority').value,
-        'Follow-Up Notes': document.getElementById('editNotes').value
+        'Follow-Up Notes': combinedNotes
     };
 
     fetch('/api/update', {
@@ -519,15 +568,16 @@ function saveLead() {
     .then(r => r.json())
     .then(data => {
         if(data.status === 'success') {
+            showToast('✅ Lead saved successfully', 'success');
             closeModal();
             loadData(); 
         } else {
-            alert('Error updating: ' + data.error);
+            showToast('❌ Error: ' + data.error, 'error');
             btn.innerText = 'Save Changes';
         }
     })
     .catch(e => {
-        alert('Network Error');
+        showToast('❌ Network error — could not save', 'error');
         btn.innerText = 'Save Changes';
     });
 }
@@ -620,13 +670,14 @@ function deleteSelectedLeads() {
     .then(r => r.json())
     .then(data => {
         if(data.error) throw new Error(data.error);
+        showToast(`🗑️ Deleted ${selectedLeadIds.size} leads`, 'success');
         selectedLeadIds.clear();
         updateDeleteBtnVisibility();
         loadData(false);
         btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg><span class="btn-text">Delete (<span id="selectedCount">0</span>)</span>`;
     })
     .catch(e => {
-        alert('Delete failed: ' + e);
+        showToast('❌ Delete failed: ' + e, 'error');
         btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg><span class="btn-text">Delete (<span id="selectedCount">${selectedLeadIds.size}</span>)</span>`;
     });
 }
@@ -693,3 +744,120 @@ window.shareLead = function(id) {
         });
     }
 };
+
+// === EXPORT CSV === //
+window.exportFilteredCSV = function() {
+    if (!visuallyFilteredLeads.length) {
+        showToast('No leads to export', 'warning');
+        return;
+    }
+    const keys = Object.keys(visuallyFilteredLeads[0]).filter(k => !k.startsWith('_'));
+    const rows = [
+        keys.map(k => `"${k}"`).join(','),
+        ...visuallyFilteredLeads.map(l =>
+            keys.map(k => `"${(l[k] || '').replace(/"/g, '""')}"`).join(',')
+        )
+    ];
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `leads_export_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast(`✅ Exported ${visuallyFilteredLeads.length} leads`, 'success');
+};
+
+// === DUE TODAY FILTER === //
+window.filterDueToday = function() {
+    const today = new Date().toISOString().split('T')[0];
+    dueTodayMode = true;
+    visuallyFilteredLeads = globalLeads.filter(l =>
+        (l['Reminder Flag (Auto)'] || '').includes('DUE TODAY') ||
+        (l['Next Follow-Up Date'] || '').startsWith(today)
+    );
+    currentPage = 1;
+    renderTable();
+    showToast(`🔔 ${visuallyFilteredLeads.length} leads due today`, visuallyFilteredLeads.length > 0 ? 'warning' : 'info');
+};
+
+// === INLINE STATUS UPDATE === //
+window.quickUpdateStatus = function(id, status) {
+    const lead = globalLeads.find(l => l['Lead ID'] === id);
+    if (!lead || lead['Lead Status'] === status) return;
+    lead['Lead Status'] = status; // Optimistic update
+    fetch('/api/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 'Lead ID': id, 'Lead Status': status })
+    })
+    .then(() => showToast(`✅ Status → ${status}`, 'success'))
+    .catch(() => showToast('❌ Failed to update status', 'error'));
+};
+
+// === NEW LEAD MODAL === //
+window.openNewLeadModal = function() {
+    // Clear fields
+    ['nlName','nlPhone','nlEmail','nlLocation','nlCategory','nlNotes'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    const p = document.getElementById('nlPriority');
+    if (p) p.value = '🟡 Medium';
+    document.getElementById('newLeadModal').style.display = 'block';
+    setTimeout(() => document.getElementById('nlName').focus(), 100);
+};
+
+window.closeNewLeadModal = function() {
+    document.getElementById('newLeadModal').style.display = 'none';
+};
+
+window.saveNewLead = function() {
+    const name = (document.getElementById('nlName').value || '').trim();
+    if (!name) { showToast('⚠️ Lead name is required', 'warning'); return; }
+    
+    const btn = document.getElementById('saveNewLeadBtn');
+    btn.innerText = 'Creating...';
+    btn.disabled = true;
+
+    const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true });
+    const notes = document.getElementById('nlNotes').value.trim();
+    const initialNote = notes ? `[${timestamp}] ${notes}` : '';
+
+    const payload = {
+        Name:     name,
+        Phone:    document.getElementById('nlPhone').value.trim(),
+        Email:    document.getElementById('nlEmail').value.trim(),
+        Location: document.getElementById('nlLocation').value.trim(),
+        'Category (Pitch Angle)': document.getElementById('nlCategory').value.trim(),
+        'Follow-Up Priority (Auto)': document.getElementById('nlPriority').value,
+        'Follow-Up Notes': initialNote,
+    };
+
+    fetch('/api/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) throw new Error(data.error);
+        showToast(`✅ Lead "${name}" created (${data.lead_id})`, 'success');
+        closeNewLeadModal();
+        loadData(false);
+    })
+    .catch(e => {
+        showToast('❌ Failed to create lead: ' + e.message, 'error');
+    })
+    .finally(() => {
+        btn.innerText = 'Create Lead';
+        btn.disabled = false;
+    });
+};
+
+// Close new lead modal on outside click
+window.addEventListener('click', function(event) {
+    const m = document.getElementById('newLeadModal');
+    if (event.target === m) closeNewLeadModal();
+});
+
