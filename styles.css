@@ -784,14 +784,10 @@ tr:last-child td { border-bottom: none; }
         max-width: 100% !important;
         max-height: 90dvh;
         overflow-y: auto;
-        margin: auto;
-        padding: 16px;
+        margin: 0;
+        padding: 16px 16px calc(env(safe-area-inset-bottom, 0px) + 32px) 16px;
         border-radius: 16px 16px 0 0;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        top: auto;
+        position: relative;
     }
     .modal {
         align-items: flex-end;
