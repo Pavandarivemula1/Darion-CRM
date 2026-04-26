@@ -529,8 +529,8 @@ function viewLead(id) {
             ${lead['Follow-Up Notes'] ? `<div style="background:#f9fafb; border:1px solid var(--border-color); border-radius:6px; padding:10px 12px; font-size:12px; color:var(--text-muted); white-space:pre-wrap; max-height:100px; overflow-y:auto; margin-bottom:8px; margin-top:6px;">${lead['Follow-Up Notes']}</div>` : ''}
             <textarea id="editNotes" class="modal-input" placeholder="Add a new note (will be timestamped and prepended)..." style="height: 70px; resize: vertical; margin-top:${lead['Follow-Up Notes'] ? '0' : '6px'};"></textarea>
         </div>
-        <div style="margin-top: 24px; display:flex; justify-content: flex-end;">
-            <button class="btn-primary" id="saveLeadBtn" onclick="saveLead()">Save Changes</button>
+        <div style="margin-top: 24px; padding-bottom: 30px; display:flex; justify-content: flex-end;">
+            <button type="button" class="btn-primary" id="saveLeadBtn" onclick="saveLead()" ontouchstart="saveLead()">Save Changes</button>
         </div>
     `;
 

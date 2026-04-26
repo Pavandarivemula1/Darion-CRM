@@ -221,9 +221,9 @@
             <div class="detail-item" style="margin-top:16px;"><span class="label">Notes / Initial Remarks</span>
                 <textarea id="nlNotes" class="modal-input" placeholder="First impression, source, how you found this lead..." style="height:70px; resize:vertical; margin-top:6px;"></textarea>
             </div>
-            <div style="margin-top: 24px; display:flex; justify-content: flex-end; gap:12px;">
-                <button class="btn-outline" onclick="closeNewLeadModal()">Cancel</button>
-                <button class="btn-primary" id="saveNewLeadBtn" onclick="saveNewLead()" style="background:#7c3aed;">Create Lead</button>
+            <div style="margin-top: 24px; padding-bottom: 30px; display:flex; justify-content: flex-end; gap:12px;">
+                <button type="button" class="btn-outline" onclick="closeNewLeadModal()" ontouchstart="closeNewLeadModal()">Cancel</button>
+                <button type="button" class="btn-primary" id="saveNewLeadBtn" onclick="saveNewLead()" ontouchstart="saveNewLead()" style="background:#7c3aed;">Create Lead</button>
             </div>
         </div>
     </div>
