@@ -791,7 +791,6 @@ tr:last-child td { border-bottom: none; }
     }
     .modal {
         align-items: flex-end;
-        display: flex !important;
     }
     .modal[style*="display: block"] {
         display: flex !important;
