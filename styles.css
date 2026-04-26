@@ -851,3 +851,51 @@ tr:last-child td { border-bottom: none; }
         font-size: 20px !important;
     }
 }
+
+/* Floating Refresh Button */
+.floating-refresh-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background-color: var(--brand-primary);
+    color: white;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    z-index: 1000;
+    transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s;
+    border: none;
+}
+.floating-refresh-btn:hover {
+    background-color: var(--brand-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+.floating-refresh-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.floating-refresh-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+}
+@media (max-width: 768px) {
+    .floating-refresh-btn {
+        bottom: 80px; /* Above bottom nav */
+        right: 16px;
+        width: 48px;
+        height: 48px;
+    }
+    .floating-refresh-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+}
