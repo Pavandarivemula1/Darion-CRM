@@ -261,9 +261,10 @@ function renderTable() {
         }
 
         const isChecked = selectedLeadIds.has(lead['Lead ID']) ? 'checked' : '';
+        const safeName = (lead.Name || 'Unnamed Lead').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         tr.innerHTML = `
             <td style="text-align: center;"><input type="checkbox" class="lead-checkbox" value="${lead['Lead ID']}" ${isChecked} onchange="toggleLeadSelection(this)" style="cursor:pointer;"></td>
-            <td data-label="Lead Name" onclick="viewLead('${lead['Lead ID']}')" style="cursor:pointer;" title="Click to view/edit lead">
+            <td data-label="Lead Name" onclick="copyTitleAndOpen('${safeName}', '${lead['Lead ID']}')" style="cursor:pointer;" title="Click to copy name and view lead">
                 <strong style="color:var(--brand-primary);">${lead.Name || 'Unnamed Lead'}</strong>
             </td>
             <td data-label="Contact"><div style="font-size:13px;">${lead.Phone || lead.Email || 'No info'}</div></td>
@@ -387,12 +388,20 @@ function renderPipeline() {
                 </a>`;
             }
 
+            let searchQuery = encodeURIComponent(lead.Name || lead.Phone || lead.Email || '');
+            let searchLink = `<a href="https://www.google.com/search?q=${searchQuery}" target="_blank" title="Search Google" style="color:var(--brand-primary); text-decoration:none; display:flex; align-items:center;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </a>`;
+
+            const safeName = (lead.Name || 'Unnamed').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
             card.innerHTML = `
-                <div class="kc-title">${lead.Name || 'Unnamed'}</div>
+                <div class="kc-title" onclick="copyTitleAndOpen('${safeName}', '${lead['Lead ID']}'); event.stopPropagation();" style="cursor: pointer;" title="Tap to copy name and view lead">${lead.Name || 'Unnamed'}</div>
                 <div class="kc-meta" style="margin-bottom: 12px; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px;">${lead.Phone || lead.Email || 'No contact'}</div>
                 <div class="kc-footer" style="border-top: none; padding-top: 0;">
                     <span class="badge ${badgeClass}">${cleanPriority}</span>
                     <div style="display:flex; gap:16px; align-items:center;">
+                        ${searchLink}
                         ${callLink}
                         <button onclick="viewLead('${lead['Lead ID']}'); return false;" style="background:var(--brand-primary); color:#fff; border:none; border-radius:4px; padding:4px 12px; font-size:12px; font-weight:600; cursor:pointer;">Edit</button>
                     </div>
@@ -616,3 +625,24 @@ function deleteSelectedLeads() {
         btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg><span class="btn-text">Delete (<span id="selectedCount">${selectedLeadIds.size}</span>)</span>`;
     });
 }
+
+window.copyTitleAndOpen = function(text, id) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+            viewLead(id);
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+            viewLead(id);
+        });
+    } else {
+        let ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try { document.execCommand('copy'); } catch(e) {}
+        document.body.removeChild(ta);
+        viewLead(id);
+    }
+};
