@@ -457,6 +457,9 @@ function viewLead(id) {
         <a href="https://www.google.com/search?q=${searchQ}" target="_blank" style="margin-left:12px; font-size:13px; font-weight:600; padding:6px 12px; background:#eff6ff; color:var(--brand-primary); border-radius:6px; text-decoration:none; display:inline-flex; align-items:center; vertical-align: middle;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Google Search
         </a>
+        <button onclick="shareLead('${id}')" style="margin-left:8px; font-size:13px; font-weight:600; padding:6px 12px; background:#f0fdf4; color:#16a34a; border:none; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; vertical-align: middle;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>Share
+        </button>
     `;
     const body = document.getElementById('modalBody');
     
@@ -646,5 +649,47 @@ window.copyTitleAndOpen = function(text, id) {
         try { document.execCommand('copy'); } catch(e) {}
         document.body.removeChild(ta);
         viewLead(id);
+    }
+};
+
+window.shareLead = function(id) {
+    const lead = globalLeads.find(l => l['Lead ID'] === id);
+    if (!lead) return;
+
+    const name = lead.Name || 'Unnamed Lead';
+    const phone = lead.Phone || '';
+    const email = lead.Email || '';
+    const status = lead['Lead Status'] || 'New';
+    const priority = (lead['Follow-Up Priority (Auto)'] || 'Low').replace(/[^a-zA-Z ]/g, '').trim();
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(name)}`;
+
+    const shareText = [
+        `📋 Lead: ${name}`,
+        phone   ? `📞 Phone: ${phone}`  : '',
+        email   ? `✉️ Email: ${email}`  : '',
+        `🏷 Status: ${status}`,
+        `⚡ Priority: ${priority}`,
+        `🔍 Search: ${searchUrl}`
+    ].filter(Boolean).join('\n');
+
+    if (navigator.share) {
+        navigator.share({ title: name, text: shareText })
+            .catch(() => {}); // user cancelled – ignore
+    } else {
+        navigator.clipboard.writeText(shareText).then(() => {
+            const btn = document.activeElement;
+            const orig = btn.innerHTML;
+            btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><polyline points="20 6 9 17 4 12"></polyline></svg>Copied!`;
+            setTimeout(() => { btn.innerHTML = orig; }, 2000);
+        }).catch(() => {
+            // Final fallback: textarea copy
+            let ta = document.createElement('textarea');
+            ta.value = shareText;
+            ta.style.position = 'fixed';
+            document.body.appendChild(ta);
+            ta.focus(); ta.select();
+            try { document.execCommand('copy'); } catch(e) {}
+            document.body.removeChild(ta);
+        });
     }
 };
