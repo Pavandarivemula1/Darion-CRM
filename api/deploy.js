@@ -18,7 +18,7 @@ module.exports = async function handler(req, res) {
   }
 
   const TEMPLATE_ENGINE_URL =
-    process.env.TEMPLATE_ENGINE_URL || 'http://localhost:8000';
+    process.env.TEMPLATE_ENGINE_URL || 'https://template-auto-production.up.railway.app';
 
   try {
     const upstream = await fetch(`${TEMPLATE_ENGINE_URL}/deploy/${client_id}`, {
