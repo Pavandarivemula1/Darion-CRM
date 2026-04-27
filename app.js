@@ -1,4 +1,9 @@
 // ============================================================
+// BACKEND URL (Railway)
+// ============================================================
+const BACKEND_URL = 'https://template-auto-production.up.railway.app';
+
+// ============================================================
 // AUTH GUARD & ROLE ENFORCEMENT
 // ============================================================
 const SUPABASE_URL = 'https://ajrtewupbfupxpwwvrcz.supabase.co';
@@ -905,7 +910,7 @@ function buildTemplateCards(defaultSelected = '4') {
 
         card.innerHTML = `
             <div class="tmpl-preview">
-                <iframe src="http://localhost:8000/template/preview/${id}"
+                <iframe src="${BACKEND_URL}/template/preview/${id}"
                     loading="lazy" sandbox="allow-same-origin allow-scripts"
                     title="${label}"></iframe>
             </div>
@@ -990,7 +995,7 @@ window.requestDemoSite = async function(id, btn, fromModal = false, customPayloa
     try {
         // ── Step 1: Create client record ─────────────────────────────────
         showToast('Creating demo site...', 'info');
-        const createRes = await fetch('http://localhost:8000/client/create', {
+        const createRes = await fetch(`${BACKEND_URL}/client/create`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify(clientPayload)
@@ -1001,7 +1006,7 @@ window.requestDemoSite = async function(id, btn, fromModal = false, customPayloa
 
         // ── Step 2: Apply selected template ──────────────────────────────
         showToast('Applying template...', 'info');
-        const tplRes = await fetch('http://localhost:8000/template/select', {
+        const tplRes = await fetch(`${BACKEND_URL}/template/select`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ client_id: clientId, template_name: chosenTemplate })
@@ -1163,7 +1168,7 @@ window.viewDemoWeb = async function(id) {
     };
 
     try {
-        const res = await fetch('http://localhost:8000/client/create', {
+        const res = await fetch(`${BACKEND_URL}/client/create`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify(payload)
@@ -1175,7 +1180,7 @@ window.viewDemoWeb = async function(id) {
         const clientId = data.id;
 
         showToast('Demo site ready! Opening...', 'success');
-        window.open(`http://localhost:8000/select/${clientId}`, '_blank');
+        window.open(`${BACKEND_URL}/select/${clientId}`, '_blank');
     } catch (err) {
         console.error('Demo Web error:', err);
         showToast(`Failed to create demo site: ${err.message}`, 'error');
