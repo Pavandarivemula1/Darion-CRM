@@ -220,7 +220,7 @@ function loadData(isSilentPolling = false) {
         }
         lastDataFingerprint = fingerprint;
 
-        globalLeads = data || [];
+        globalLeads = Array.isArray(data) ? data : (data.data || data.leads || data.rows || []);
         // Local sort to avoid ".order('Lead ID')" syntax bugs that might break Supabase SDK
         globalLeads.sort((a,b) => {
             const numA = parseInt((a['Lead ID']||'').split('-')[1]) || 0;
