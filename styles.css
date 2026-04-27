@@ -1438,4 +1438,7 @@ tr:last-child td { border-bottom: none; }
         left: 10px;
     }
     .toast { max-width: 100%; font-size: 12.5px; }
+
+    /* Hide top header logout button on mobile (use Profile page Sign Out instead) */
+    .header-logout-btn { display: none !important; }
 }
