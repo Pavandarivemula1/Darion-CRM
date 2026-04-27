@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = document.getElementById('uploadBtn');
         btn.innerText = 'Processing...';
         
-        fetch(`${BACKEND_URL}/api/upload`, {
+        fetch('/api/upload', {
             method: 'POST',
             body: file,
             headers: { 'Content-Type': 'text/csv' }
@@ -209,7 +209,7 @@ function loadData(isSilentPolling = false) {
     }
     
     // Bulletproof fetch: no `.order` on network layer to bypass SDK column-name-spacing bugs
-    fetch(`${BACKEND_URL}/api/leads`)
+    fetch('/api/leads')
     .then(res => res.json())
     .then(data => {
         if(data.error) throw new Error(data.error);
@@ -599,7 +599,7 @@ function dropLead(ev, targetStatus) {
     const leadUpdate = { 'Lead ID': leadId, 'Lead Status': targetStatus };
 
     // Fire network request. Polling automatically repaints. 
-    fetch(`${BACKEND_URL}/api/update`, {
+    fetch('/api/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(leadUpdate)
@@ -715,7 +715,7 @@ function saveLead() {
         'Follow-Up Notes': combinedNotes
     };
 
-    fetch(`${BACKEND_URL}/api/update`, {
+    fetch('/api/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(leadUpdate)
@@ -817,7 +817,7 @@ function deleteSelectedLeads() {
     const btn = document.getElementById('deleteSelectedBtn');
     btn.innerHTML = 'Deleting...';
     
-    fetch(`${BACKEND_URL}/api/delete`, {
+    fetch('/api/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: Array.from(selectedLeadIds) })
@@ -1015,7 +1015,7 @@ window.requestDemoSite = async function(id, btn, fromModal = false, customPayloa
 
         // ── Step 3: Deploy to Vercel ──────────────────────────────────────
         showToast('Deploying to Vercel...', 'info');
-        const deployRes = await fetch(`${BACKEND_URL}/api/deploy`, {
+        const deployRes = await fetch('/api/deploy', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ client_id: clientId })
@@ -1029,7 +1029,7 @@ window.requestDemoSite = async function(id, btn, fromModal = false, customPayloa
         if (!deployedUrl) throw new Error('No URL returned from deployment');
 
         // ── Step 4: Save URL in Supabase and update UI ───────────────────
-        await fetch(`${BACKEND_URL}/api/update`, {
+        await fetch('/api/update', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ 'Lead ID': id, 'Demo Site URL': deployedUrl })
@@ -1070,7 +1070,7 @@ window.addEventListener('message', async function(event) {
     // Persist to Supabase
     if (leadId) {
         try {
-            await fetch(`${BACKEND_URL}/api/update`, {
+            await fetch('/api/update', {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body:    JSON.stringify({ 'Lead ID': leadId, 'Demo Site URL': url })
@@ -1101,7 +1101,7 @@ window.deleteDemoSite = async function(leadId, btn) {
         // Extract client_id from the stored URL (darion-demo-{id}.vercel.app)
         // Try to call the delete endpoint if we have the client ID
         // We'll just clear from Supabase since we don't store client_id separately
-        await fetch(`${BACKEND_URL}/api/update`, {
+        await fetch('/api/update', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ 'Lead ID': leadId, 'Demo Site URL': null })
@@ -1270,7 +1270,7 @@ window.quickUpdateStatus = function(id, status) {
     const lead = globalLeads.find(l => l['Lead ID'] === id);
     if (!lead || lead['Lead Status'] === status) return;
     lead['Lead Status'] = status; // Optimistic update
-    fetch(`${BACKEND_URL}/api/update`, {
+    fetch('/api/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 'Lead ID': id, 'Lead Status': status })
@@ -1347,7 +1347,7 @@ window.saveNewLead = function() {
         'Reminder Flag (Auto)': 'Scheduled'
     };
 
-    fetch(`${BACKEND_URL}/api/create`, {
+    fetch('/api/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
