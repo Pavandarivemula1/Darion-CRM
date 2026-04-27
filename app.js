@@ -357,6 +357,7 @@ function renderTable() {
         if(region.length > 15) region = region.substring(0, 15) + '..';
         
         let actionsHtml = `<button class="btn-primary" onclick="viewLead('${lead['Lead ID']}')">Edit</button>`;
+        actionsHtml += `<button class="btn-outline" onclick="viewDemoWeb('${lead['Lead ID']}')" style="margin-left:8px; border-color:#8b5cf6; color:#8b5cf6; font-weight:600;">Demo Web</button>`;
         if(lead.Phone && lead.Phone.trim().length >= 4) {
              let cleanPhone = lead.Phone.replace(/[^0-9+]/g, '');
              actionsHtml += `<a href="tel:${cleanPhone}" class="btn-success" style="text-decoration:none; margin-left:8px;">Call</a>`;
@@ -511,7 +512,8 @@ function renderPipeline() {
                 <div class="kc-meta" style="margin-bottom: 12px; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px;">${lead.Phone || lead.Email || 'No contact'}</div>
                 <div class="kc-footer" style="border-top: none; padding-top: 0;">
                     <span class="badge ${badgeClass}">${cleanPriority}</span>
-                    <div style="display:flex; gap:10px; align-items:center;">
+                    <div style="display:flex; gap:5px; align-items:center; flex-wrap: wrap;">
+                        <button onclick="viewDemoWeb('${lead['Lead ID']}'); return false;" style="background:#8b5cf6; color:#fff; border:none; border-radius:4px; padding:4px 8px; font-size:12px; font-weight:600; cursor:pointer;">Demo Web</button>
                         ${searchLink}
                         ${waLink}
                         ${callLink}
@@ -768,6 +770,14 @@ window.copyTitleAndOpen = function(text, id) {
         document.body.removeChild(ta);
         viewLead(id);
     }
+};
+
+window.viewDemoWeb = function(id) {
+    const lead = globalLeads.find(l => l['Lead ID'] === id);
+    if (!lead) return;
+    showToast('Demo Web is launching...', 'info');
+    // You can adjust this URL to match your CRM demo generator endpoint
+    window.open('http://localhost:3000/?lead=' + encodeURIComponent(id), '_blank');
 };
 
 window.shareLead = function(id) {
