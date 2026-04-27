@@ -4,65 +4,85 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Darion CRM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
 <body>
     <div class="app-layout">
         <aside class="sidebar">
             <div class="logo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
                 Darion CRM
             </div>
             <nav>
                 <a href="#" id="navDashboardBtn" class="active">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                     Dashboard
                 </a>
                 <a href="#" id="navPipelineBtn">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                     Lead Pipeline
+                </a>
+                <a href="#" id="navProfileBtn">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    Profile
                 </a>
             </nav>
         </aside>
         <main class="main-content">
             <header>
                 <div class="search-bar" style="position: relative;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <input type="text" id="searchLeads" placeholder="Search by name or phone..." style="padding-right: 40px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="searchLeads" placeholder="Search by name or phone...">
                     <button class="mobile-filter-toggle" onclick="toggleMobileFilters()" title="Toggle Filters">
-                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                     </button>
                 </div>
-                <div class="actions" style="display:flex; gap:16px; align-items:center;">
+                <div class="actions" style="display:flex; gap:8px; align-items:center;">
                     <button id="deleteSelectedBtn" class="btn-outline" style="display:none; color: var(--accent-red); border-color: var(--accent-red);" onclick="deleteSelectedLeads()">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         <span class="btn-text">Delete (<span id="selectedCount">0</span>)</span>
                     </button>
                     <button id="exportBtn" class="btn-outline" onclick="exportFilteredCSV()" title="Export filtered leads as CSV">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                         <span class="btn-text">Export CSV</span>
                     </button>
                     <button id="newLeadBtn" class="btn-primary" onclick="openNewLeadModal()" title="Add a new lead manually" style="background: #7c3aed;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                         <span class="btn-text">New Lead</span>
                     </button>
                     <input type="file" id="csvUploadInput" accept=".csv" style="display:none;" />
                     <button id="uploadBtn" class="btn-primary" onclick="document.getElementById('csvUploadInput').click()">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                         <span class="btn-text">Upload CSV</span>
                     </button>
-                    <div class="user-profile">
-                        <span>Admin</span>
-                        <div class="avatar">A</div>
+                    <div class="user-profile" id="userProfileChip" style="cursor:default; gap:10px;">
+                        <div style="text-align:right; line-height:1.3;">
+                            <div style="font-size:13px; font-weight:600; color:var(--text-main);" id="userDisplayName">Loading...</div>
+                            <div style="font-size:10.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em;" id="userRoleBadge"></div>
+                        </div>
+                        <div class="avatar" id="userAvatar">?</div>
+                        <button onclick="handleLogout()" title="Sign out"
+                            style="background:transparent; border:1px solid var(--border-strong); border-radius:6px;
+                                   padding:6px 10px; cursor:pointer; color:var(--text-muted); font-size:12px;
+                                   display:flex; align-items:center; gap:5px; font-family:inherit; transition:all .2s;"
+                            onmouseover="this.style.borderColor='var(--accent-red)';this.style.color='var(--accent-red)';"
+                            onmouseout="this.style.borderColor='var(--border-strong)';this.style.color='var(--text-muted)';"
+                        >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Logout
+                        </button>
                     </div>
                 </div>
             </header>
             
             <div id="globalFilters" class="global-filters-container mobile-hidden" style="flex: 0 0 auto;">
-                <div class="filters" style="display: flex; gap: 16px; align-items: center; padding: 16px 16px 0 16px; overflow-x: auto;">
-                    <select id="filterCity" class="modal-input" style="width: 200px; margin-top:0;" onchange="applyFilters()">
+                <div class="filters" style="display: flex; gap: 10px; align-items: center; padding: 12px 24px; overflow-x: auto;">
+                    <select id="filterCity" class="modal-input" style="width: 190px; margin-top:0;" onchange="applyFilters()">
                         <option value="All">All Regions</option>
                     </select>
                     <select id="filterStatus" class="modal-input" style="width: 150px; margin-top:0;" onchange="applyFilters()">
@@ -70,6 +90,7 @@
                         <option value="New">New</option>
                         <option value="Contacted">Contacted</option>
                         <option value="Interested">Interested</option>
+                        <option value="Demo Requested">Demo Requested</option>
                         <option value="Not Interested">Not Interested</option>
                         <option value="Closed">Closed</option>
                         <option value="Duplicate">Duplicate</option>
@@ -81,20 +102,24 @@
                         <option value="Low">Low</option>
                         <option value="Scheduled">Scheduled</option>
                     </select>
-                    <select id="filterService" class="modal-input" style="width: 180px; margin-top:0;" onchange="applyFilters()">
+                    <select id="filterService" class="modal-input" style="width: 170px; margin-top:0;" onchange="applyFilters()">
                         <option value="All">All Services</option>
                         <option value="Needs Website">Needs Website</option>
                         <option value="Has WhatsApp">Has WhatsApp</option>
                     </select>
-                    <button id="dueTodayBtn" class="btn-outline" onclick="filterDueToday()" title="Show only leads due today">
-                        🔔 Due Today <span id="dueTodayBadge" class="due-today-badge" style="display:none;">0</span>
+                    <button id="dueTodayBtn" class="btn-outline" onclick="filterDueToday()" title="Show leads due today">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                        Due Today <span id="dueTodayBadge" class="due-today-badge" style="display:none;">0</span>
                     </button>
-                    <button class="btn-outline" onclick="applyFilters()">Refresh</button>
+                    <button class="btn-outline" onclick="applyFilters()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                        Refresh
+                    </button>
                 </div>
             </div>
 
             <div id="dashboardView">
-                <div class="dashboard-stats" style="margin-bottom: 24px; padding-top: 16px;">
+                <div class="dashboard-stats" style="margin-bottom: 0;">
                     <div class="stat-card card">
                         <h3>Total Leads</h3>
                         <div class="value" id="totalLeads">0</div>
@@ -163,7 +188,7 @@
 
             <div id="pipelineView" style="display: none; height: 100%;">
                 <div class="table-header" style="margin-bottom:0;">
-                    <h2 style="font-size: 20px; font-weight: 600;">Sales Pipeline</h2>
+                    <h2 style="font-size: 18px; font-weight: 700;">Sales Pipeline</h2>
                     <div class="live-badge" title="Data is syncing automatically in real-time">
                         <span class="live-indicator"></span> LIVE
                     </div>
@@ -174,15 +199,139 @@
                 </div>
             </div>
 
+            <!-- Profile View -->
+            <div id="profileView" style="display:none; flex:1; overflow-y:auto; padding:24px;">
+                <div style="max-width:680px; margin:0 auto; display:flex; flex-direction:column; gap:20px;">
+
+                    <!-- Page Header -->
+                    <div style="margin-bottom:4px;">
+                        <h1 style="font-size:20px; font-weight:700; color:var(--text-main); letter-spacing:-0.02em;">Profile Settings</h1>
+                        <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">Manage your account information and security preferences.</p>
+                    </div>
+
+                    <!-- Account Info Card -->
+                    <div class="card" style="overflow:hidden;">
+                        <div style="padding:16px 20px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <div style="font-size:14px; font-weight:600; color:var(--text-main);">Account Information</div>
+                                <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Update your name and contact details.</div>
+                            </div>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        </div>
+                        <div style="padding:20px;">
+                            <!-- Avatar Row -->
+                            <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid var(--border-color);">
+                                <div id="profileAvatar" style="width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,#dbeafe,#e0e7ff); display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:700; color:var(--brand-primary); border:3px solid #bfdbfe; flex-shrink:0;">?</div>
+                                <div>
+                                    <div id="profileNameDisplay" style="font-size:16px; font-weight:700; color:var(--text-main);">Loading...</div>
+                                    <div id="profileEmailDisplay" style="font-size:12.5px; color:var(--text-muted); margin-top:2px;"></div>
+                                    <div id="profileRoleDisplay" style="display:inline-flex; align-items:center; gap:5px; margin-top:6px; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600; background:#f3e8ff; color:#7e22ce;"></div>
+                                </div>
+                            </div>
+                            <!-- Fields -->
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                                <div style="display:flex; flex-direction:column; gap:5px;">
+                                    <label style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;">Full Name</label>
+                                    <input id="profileFullName" class="modal-input" placeholder="Your full name" />
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:5px;">
+                                    <label style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;">Email Address</label>
+                                    <input id="profileEmail" class="modal-input" placeholder="your@email.com" type="email" disabled style="background:#f8fafc; color:var(--text-muted); cursor:not-allowed;" />
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:5px;">
+                                    <label style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;">Role</label>
+                                    <input id="profileRole" class="modal-input" disabled style="background:#f8fafc; color:var(--text-muted); cursor:not-allowed;" />
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:5px;">
+                                    <label style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;">Member Since</label>
+                                    <input id="profileMemberSince" class="modal-input" disabled style="background:#f8fafc; color:var(--text-muted); cursor:not-allowed;" />
+                                </div>
+                            </div>
+                            <div style="margin-top:18px; display:flex; justify-content:flex-end;">
+                                <button class="btn-primary" id="saveProfileBtn" onclick="saveProfileInfo()" style="gap:8px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                                    Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Card -->
+                    <div class="card" style="overflow:hidden;">
+                        <div style="padding:16px 20px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <div style="font-size:14px; font-weight:600; color:var(--text-main);">Security</div>
+                                <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Update your password to keep your account secure.</div>
+                            </div>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </div>
+                        <div style="padding:20px;">
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                                <div style="display:flex; flex-direction:column; gap:5px; grid-column:1/-1;">
+                                    <label style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;">New Password</label>
+                                    <div style="position:relative;">
+                                        <input id="profileNewPass" class="modal-input" type="password" placeholder="Enter new password" style="padding-right:42px;" />
+                                        <button onclick="togglePassVis('profileNewPass', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-muted); display:flex; padding:4px;" title="Show/hide password">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:5px; grid-column:1/-1;">
+                                    <label style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;">Confirm New Password</label>
+                                    <div style="position:relative;">
+                                        <input id="profileConfirmPass" class="modal-input" type="password" placeholder="Confirm new password" style="padding-right:42px;" />
+                                        <button onclick="togglePassVis('profileConfirmPass', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-muted); display:flex; padding:4px;" title="Show/hide password">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="passStrengthBar" style="margin-top:10px; height:4px; border-radius:4px; background:var(--border-color); overflow:hidden; display:none;">
+                                <div id="passStrengthFill" style="height:100%; width:0; border-radius:4px; transition:width .3s, background .3s;"></div>
+                            </div>
+                            <div id="passStrengthLabel" style="font-size:11px; color:var(--text-muted); margin-top:5px; display:none;"></div>
+                            <div style="margin-top:18px; display:flex; justify-content:flex-end;">
+                                <button class="btn-outline" id="changePassBtn" onclick="changePassword()" style="gap:8px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    Update Password
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Danger Zone -->
+                    <div class="card" style="overflow:hidden; border-color:#fee2e2;">
+                        <div style="padding:16px 20px; border-bottom:1px solid #fee2e2; display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <div style="font-size:14px; font-weight:600; color:var(--accent-red);">Account Actions</div>
+                                <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Sign out from your current session.</div>
+                            </div>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                        </div>
+                        <div style="padding:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                            <div>
+                                <div style="font-size:13px; font-weight:500; color:var(--text-main);">Sign Out</div>
+                                <div style="font-size:12px; color:var(--text-muted);">You will be redirected to the login page.</div>
+                            </div>
+                            <button class="btn-outline" onclick="handleLogout()" style="color:var(--accent-red); border-color:var(--accent-red); gap:8px;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background=''">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                Sign Out
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
         </main>
     </div>
     
-    <!-- Modal -->
+    <!-- Lead Detail Modal -->
     <div id="leadModal" class="modal">
         <div class="modal-content card">
             <span class="close-btn" onclick="closeModal()">&times;</span>
             <div class="modal-header">
-                <h2 id="modalName">Lead Title</h2>
+                <h2 id="modalName">Lead Details</h2>
             </div>
             <div id="modalBody"></div>
         </div>
@@ -202,7 +351,7 @@
         <div class="modal-content card">
             <span class="close-btn" onclick="closeNewLeadModal()">&times;</span>
             <div class="modal-header">
-                <h2>➕ Add New Lead</h2>
+                <h2>Add New Lead</h2>
             </div>
             <div class="detail-grid">
                 <div class="detail-item"><span class="label">Business / Lead Name *</span><input id="nlName" class="modal-input" placeholder="e.g. Raj Sweets" /></div>
@@ -212,26 +361,100 @@
                 <div class="detail-item"><span class="label">Category / Pitch Angle</span><input id="nlCategory" class="modal-input" placeholder="Restaurant, Salon, etc." /></div>
                 <div class="detail-item"><span class="label">Priority</span>
                     <select id="nlPriority" class="modal-input">
-                        <option value="🔴 High">High</option>
-                        <option value="🟡 Medium" selected>Medium</option>
-                        <option value="🟢 Low">Low</option>
+                        <option value="High">High</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Low">Low</option>
                     </select>
                 </div>
             </div>
-            <div class="detail-item" style="margin-top:16px;"><span class="label">Notes / Initial Remarks</span>
+            <div class="detail-item" style="margin-top:14px;"><span class="label">Notes / Initial Remarks</span>
                 <textarea id="nlNotes" class="modal-input" placeholder="First impression, source, how you found this lead..." style="height:70px; resize:vertical; margin-top:6px;"></textarea>
             </div>
-            <div style="margin-top: 24px; padding-bottom: 30px; display:flex; justify-content: flex-end; gap:12px;">
+            <div style="margin-top: 22px; padding-bottom: 8px; display:flex; justify-content: flex-end; gap:10px;">
                 <button type="button" class="btn-outline" onclick="closeNewLeadModal()" ontouchstart="closeNewLeadModal()">Cancel</button>
                 <button type="button" class="btn-primary" id="saveNewLeadBtn" onclick="saveNewLead()" ontouchstart="saveNewLead()" style="background:#7c3aed;">Create Lead</button>
             </div>
         </div>
     </div>
 
+    <!-- Demo Customization Modal -->
+    <div id="demoConfirmModal" class="modal" style="display:none;">
+        <div class="modal-content card" style="max-width:520px;">
+            <span class="close-btn" onclick="closeDemoConfirmModal()">&times;</span>
+            <div class="modal-header" style="margin-bottom:4px;">
+                <h2>Customize Demo Website</h2>
+            </div>
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
+                Review and edit the details below before generating the demo site.
+            </p>
+
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="label">Business Name *</span>
+                    <input id="dm_title" class="modal-input" placeholder="e.g. Raj Sweets" />
+                </div>
+                <div class="detail-item">
+                    <span class="label">Contact Phone</span>
+                    <input id="dm_contact" class="modal-input" placeholder="+91 9876543210" />
+                </div>
+                <div class="detail-item">
+                    <span class="label">Email</span>
+                    <input id="dm_email" class="modal-input" placeholder="contact@example.com" />
+                </div>
+                <div class="detail-item">
+                    <span class="label">Location / Address</span>
+                    <input id="dm_location" class="modal-input" placeholder="Guntur, Andhra Pradesh" />
+                </div>
+                <div class="detail-item">
+                    <span class="label">Category / Pitch</span>
+                    <input id="dm_details" class="modal-input" placeholder="Restaurant, Salon, Real Estate..." />
+                </div>
+                <div class="detail-item">
+                    <span class="label">Logo Initials</span>
+                    <input id="dm_logo" class="modal-input" placeholder="RJ" style="text-transform:uppercase;" />
+                </div>
+            </div>
+
+            <!-- Template picker -->
+            <div class="detail-item" style="margin-top:14px;">
+                <span class="label">Template</span>
+                <input type="hidden" id="dm_template" value="4" />
+                <div id="templateCardGrid" style="
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+                    gap: 10px;
+                    margin-top: 10px;
+                    max-height: 300px;
+                    overflow-y: auto;
+                    padding: 2px;
+                ">
+                    <!-- Cards injected by JS -->
+                </div>
+            </div>
+
+            <div style="margin-top:22px; padding-bottom:6px; display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
+                <button type="button" class="btn-outline" onclick="closeDemoConfirmModal()">Cancel</button>
+                <button type="button" class="btn-outline" id="autoGenBtn"
+                    onclick="submitDemoGeneration(true)"
+                    style="border-color:#8b5cf6; color:#8b5cf6; font-weight:600;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    Auto Generate
+                </button>
+                <button type="button" class="btn-primary" id="customGenBtn"
+                    onclick="submitDemoGeneration(false)"
+                    style="background:#7c3aed;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    Generate &amp; Deploy
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="toast-container"></div>
+
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <script src="app.js?v=2"></script>
+    <script src="app.js?v=6"></script>
 </body>
 </html>

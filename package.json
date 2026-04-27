@@ -4,7 +4,7 @@
   "description": "CRM App with Supabase and Vercel Serverless Functions",
   "main": "app.js",
   "scripts": {
-    "dev": "vercel dev"
+    "start": "vercel dev"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
