@@ -311,7 +311,7 @@
             transform: scale(0);
             animation: ripple 0.45s linear forwards;
         }
-        @keyframes ripple { to { transform: scale(3); opacity: 0; } }
+        @keyframes ripple { from { transform: scale(0); opacity:1; } to { transform: scale(4); opacity: 0; } }
 
         .form-footer {
             margin-top: 32px;
@@ -480,16 +480,16 @@
             }
         }
 
-        // Ripple on button click
-        document.getElementById('loginBtn').addEventListener('click', function(e) {
+        // Ripple on pointerdown (fires instantly on mobile, no 300ms delay)
+        document.getElementById('loginBtn').addEventListener('pointerdown', function(e) {
             const btn = this;
             const ripple = document.createElement('span');
             ripple.className = 'cds--btn-ripple';
             const rect = btn.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
+            const size = Math.max(rect.width, rect.height) * 2;
             ripple.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - rect.left - size/2}px;top:${e.clientY - rect.top - size/2}px;`;
             btn.appendChild(ripple);
-            setTimeout(() => ripple.remove(), 500);
+            setTimeout(() => ripple.remove(), 600);
             if (navigator.vibrate) navigator.vibrate([8]);
         });
 

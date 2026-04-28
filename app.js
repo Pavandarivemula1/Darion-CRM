@@ -6,16 +6,19 @@ const BACKEND_URL = 'https://template-auto-production.up.railway.app';
 // ============================================================
 // HAPTIC FEEDBACK (Vibration API + Ripple)
 // ============================================================
-function haptic(el, pattern = [8]) {
+function haptic(el, pattern = [8], clientX, clientY) {
     if (navigator.vibrate) navigator.vibrate(pattern);
     if (!el) return;
     const ripple = document.createElement('span');
     ripple.className = 'cds--btn-ripple';
     const rect = el.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height);
-    ripple.style.cssText = `width:${size}px;height:${size}px;left:${rect.width/2 - size/2}px;top:${rect.height/2 - size/2}px;`;
+    const size = Math.max(rect.width, rect.height) * 2;
+    // Use pointer coords when available so ripple originates at tap/click point
+    const x = (clientX != null ? clientX - rect.left : rect.width  / 2) - size / 2;
+    const y = (clientY != null ? clientY - rect.top  : rect.height / 2) - size / 2;
+    ripple.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px;`;
     el.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 500);
+    setTimeout(() => ripple.remove(), 600);
 }
 
 // ============================================================
@@ -115,10 +118,10 @@ function showToast(msg, type = 'info', duration = 3000) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Attach haptics globally to anything that clicks like a button
-    document.addEventListener('click', (e) => {
+    // Attach haptics globally — pointerdown fires instantly on mobile (no 300ms click delay)
+    document.addEventListener('pointerdown', (e) => {
         const btn = e.target.closest('button, a.btn-primary, a.btn-success, a.btn-outline, .btn-icon, .tmpl-card');
-        if (btn) haptic(btn);
+        if (btn) haptic(btn, [8], e.clientX, e.clientY);
     }, { passive: true });
 
     initNavigation();
