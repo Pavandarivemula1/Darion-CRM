@@ -1040,40 +1040,15 @@ window.requestDemoSite = async function(id, btn, fromModal = false, customPayloa
         });
         if (!tplRes.ok) throw new Error(`Template apply failed: ${tplRes.status}`);
 
-        // ── Step 3: Deploy to Vercel ──────────────────────────────────────
-        showToast('Deploying to Vercel...', 'info');
-        const deployRes = await fetch('/api/deploy', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ client_id: clientId })
-        });
-        if (!deployRes.ok) {
-            const deployErr = await deployRes.json().catch(() => ({}));
-            throw new Error(deployErr.error || `Deploy failed: ${deployRes.status}`);
-        }
-        const deployData = await deployRes.json();
-        const deployedUrl = deployData.shareable_url || deployData.url;
-        if (!deployedUrl) throw new Error('No URL returned from deployment');
-
-        // ── Step 4: Save URL in Supabase and update UI ───────────────────
-        await fetch('/api/update', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ 'Lead ID': id, 'Demo Site URL': deployedUrl })
-        });
-        lead['Demo Site URL'] = deployedUrl;
-        lastDataFingerprint = '';  // force next poll to re-read from DB
-
-        showToast('Demo deployed! View Demo and Send Demo are now active.', 'success');
-        renderTable();
-        if (document.getElementById('pipelineView').style.display !== 'none') renderPipeline();
-        const modal = document.getElementById('leadModal');
-        if (modal && modal.style.display === 'block' && editingLeadId === id) viewLead(id);
+        // ── Step 3: Open Preview Page ──────────────────────────────────────
+        showToast('Opening preview...', 'info');
+        const previewUrl = `${BACKEND_URL}/preview/${clientId}?source=crm&leadId=${id}`;
+        window.open(previewUrl, '_blank');
 
         if (btn) { btn.disabled = false; btn.innerHTML = origText; }
     } catch (err) {
         console.error('requestDemoSite error:', err);
-        showToast('Deploy failed: ' + err.message, 'error');
+        showToast('Demo generation failed: ' + err.message, 'error');
         if (btn) { btn.disabled = false; btn.innerHTML = origText; }
     }
 };
