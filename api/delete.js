@@ -17,7 +17,7 @@ module.exports = async function handler(req, res) {
       const { data, error } = await supabase
         .from('leads')
         .delete()
-        .in('Lead ID', ids);
+        .in('"Lead ID"', ids);
 
       if (error) throw error;
 
@@ -25,7 +25,7 @@ module.exports = async function handler(req, res) {
 
     } catch (e) {
       console.error(e);
-      return res.status(500).json({ error: String(e) });
+      return res.status(500).json({ error: String(e), details: e.details, code: e.code });
     }
   } else {
     res.setHeader('Allow', ['POST']);

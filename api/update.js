@@ -13,11 +13,11 @@ module.exports = async function handler(req, res) {
     const { data, error } = await supabase
       .from('leads')
       .update(updated_lead)
-      .eq('Lead ID', updated_lead['Lead ID']);
+      .eq('"Lead ID"', updated_lead['Lead ID']);
       
     if (error) {
       console.error("Supabase Update Error:", error);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message, details: error.details, code: error.code });
     }
     return res.status(200).json({ status: 'success' });
   } else {

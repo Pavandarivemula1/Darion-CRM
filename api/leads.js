@@ -11,12 +11,12 @@ module.exports = async function handler(req, res) {
      const { data, error } = await supabase
        .from('leads')
        .select('*')
-       .order('Lead ID', { ascending: true })
+       .order('"Lead ID"', { ascending: true })
        .limit(999999);
        
      if (error) {
        console.error("Supabase Error:", error);
-       return res.status(500).json({ error: error.message });
+       return res.status(500).json({ error: error.message, details: error.details, code: error.code });
      }
      
      return res.status(200).json(data || []);

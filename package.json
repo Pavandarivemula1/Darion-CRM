@@ -4,10 +4,13 @@
   "description": "CRM App with Supabase and Vercel Serverless Functions",
   "main": "app.js",
   "scripts": {
-    "start": "vercel dev"
+    "start": "vercel dev",
+    "dev": "node server.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
-    "csv-parse": "^5.5.3"
+    "csv-parse": "^5.5.3",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
   }
 }

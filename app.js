@@ -1,7 +1,22 @@
 // ============================================================
-// BACKEND URL (Railway)
+// BACKEND URL — local dev: http://localhost:8000 | prod: https://template-auto-production.up.railway.app
 // ============================================================
 const BACKEND_URL = 'https://template-auto-production.up.railway.app';
+
+// ============================================================
+// HAPTIC FEEDBACK (Vibration API + Ripple)
+// ============================================================
+function haptic(el, pattern = [8]) {
+    if (navigator.vibrate) navigator.vibrate(pattern);
+    if (!el) return;
+    const ripple = document.createElement('span');
+    ripple.className = 'cds--btn-ripple';
+    const rect = el.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    ripple.style.cssText = `width:${size}px;height:${size}px;left:${rect.width/2 - size/2}px;top:${rect.height/2 - size/2}px;`;
+    el.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 500);
+}
 
 // ============================================================
 // AUTH GUARD & ROLE ENFORCEMENT
@@ -100,6 +115,12 @@ function showToast(msg, type = 'info', duration = 3000) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Attach haptics globally to anything that clicks like a button
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('button, a.btn-primary, a.btn-success, a.btn-outline, .btn-icon, .tmpl-card');
+        if (btn) haptic(btn);
+    }, { passive: true });
+
     initNavigation();
     loadData(false);
 
@@ -982,23 +1003,26 @@ window.requestDemoSite = async function(id, btn, fromModal = false, customPayloa
 
     const name = lead.Name || 'Unnamed Lead';
     const clientPayload = customPayload || {
-        title:     name,
-        contact:   lead.Phone    || 'N/A',
+        title:     name || 'Business',
+        contact:   (lead.Phone && lead.Phone.trim()) || (lead.Email && lead.Email.trim()) || 'Contact us',
         email:     lead.Email    || '',
         location:  lead.Location || '',
-        address:   lead.Location || '',
-        details:   lead['Category (Pitch Angle)'] || lead.Notes || '',
-        logo_text: name.substring(0, 2).toUpperCase()
+        address:   (lead.Location && lead.Location.trim()) || 'India',
+        details:   (lead['Category (Pitch Angle)'] && lead['Category (Pitch Angle)'].trim()) ||
+                   (lead.Notes && lead.Notes.trim()) ||
+                   (lead['Category'] && lead['Category'].trim()) ||
+                   'Professional services business.',
+        logo_text: name.substring(0, 2).toUpperCase() || 'BZ'
     };
     const chosenTemplate = template || DEFAULT_TEMPLATE;
 
     try {
-        // ── Step 1: Create client record ─────────────────────────────────
+        // ── Step 1: Create client record (proxied through local server to avoid CORS) ──
         showToast('Creating demo site...', 'info');
-        const createRes = await fetch(`${BACKEND_URL}/client/create`, {
+        const createRes = await fetch('/api/proxy-backend', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify(clientPayload)
+            body:    JSON.stringify({ path: '/client/create', payload: clientPayload })
         });
         if (!createRes.ok) throw new Error(`Client create failed: ${createRes.status}`);
         const clientData = await createRes.json();
@@ -1006,10 +1030,10 @@ window.requestDemoSite = async function(id, btn, fromModal = false, customPayloa
 
         // ── Step 2: Apply selected template ──────────────────────────────
         showToast('Applying template...', 'info');
-        const tplRes = await fetch(`${BACKEND_URL}/template/select`, {
+        const tplRes = await fetch('/api/proxy-backend', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ client_id: clientId, template_name: chosenTemplate })
+            body:    JSON.stringify({ path: '/template/select', payload: { client_id: clientId, template_name: chosenTemplate } })
         });
         if (!tplRes.ok) throw new Error(`Template apply failed: ${tplRes.status}`);
 
