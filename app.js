@@ -1182,7 +1182,7 @@ window.viewDemoWeb = async function(id) {
         const clientId = data.id;
 
         showToast('Demo site ready! Opening...', 'success');
-        window.open(`${BACKEND_URL}/select/${clientId}`, '_blank');
+        window.open(`${BACKEND_URL}/select/${clientId}?lead=${id}`, '_blank', 'noopener=0,noreferrer=0,opener');
     } catch (err) {
         console.error('Demo Web error:', err);
         showToast(`Failed to create demo site: ${err.message}`, 'error');
