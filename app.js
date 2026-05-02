@@ -117,6 +117,75 @@ function showToast(msg, type = 'info', duration = 3000) {
     setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, duration);
 }
 
+// === ICON REFRESH === //
+window.refreshIcons = function() {
+    if (window.lucide && window.lucide.createIcons) {
+        window.lucide.createIcons();
+    }
+};
+
+// === GLOBAL KEYBOARD SHORTCUTS === //
+document.addEventListener('keydown', (e) => {
+    // Prevent overriding inputs
+    const activeEl = document.activeElement;
+    const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
+
+    // / or Ctrl+K for search
+    if ((e.key === '/' || (e.ctrlKey && e.key === 'k')) && !isInputFocused) {
+        e.preventDefault();
+        const searchInput = document.getElementById('searchLeads');
+        if (searchInput) searchInput.focus();
+    }
+    // N for new lead
+    else if (e.key.toLowerCase() === 'n' && !isInputFocused) {
+        e.preventDefault();
+        if (typeof openNewLeadModal === 'function') openNewLeadModal();
+    }
+    // Esc to close modals or clear selection
+    else if (e.key === 'Escape') {
+        if (document.getElementById('leadModal')?.style.display === 'block') {
+            closeModal();
+        } else if (document.getElementById('newLeadModal')?.style.display === 'block') {
+            closeNewLeadModal();
+        } else if (document.getElementById('demoConfirmModal')?.style.display === 'block') {
+            closeDemoConfirmModal();
+        } else if (document.getElementById('regionActionModal')?.style.display === 'block') {
+            closeRegionActionModal();
+        } else if (selectedLeadIds.size > 0) {
+            clearSelection();
+        }
+    }
+});
+
+// Open Google Search — native app on mobile, browser on desktop
+window.openGoogleSearch = function(query) {
+    const q = encodeURIComponent(query);
+    const ua = navigator.userAgent || '';
+
+    if (/android/i.test(ua)) {
+        // Android: open in Google Search app; Chrome is the fallback
+        const fallback = encodeURIComponent(`https://www.google.com/search?q=${q}`);
+        window.location.href = `intent://www.google.com/search?q=${q}#Intent;scheme=https;package=com.google.android.googlequicksearchbox;S.browser_fallback_url=${fallback};end`;
+
+    } else if (/iphone|ipad|ipod/i.test(ua)) {
+        // iOS: open in Chrome app (googlechromes://); falls back to Safari if Chrome not installed
+        const chromeUrl = `googlechromes://www.google.com/search?q=${q}`;
+        const safariFallback = `https://www.google.com/search?q=${q}`;
+        // Attempt Chrome; if it fails (not installed), redirect to Safari after 500 ms
+        const start = Date.now();
+        window.location.href = chromeUrl;
+        setTimeout(() => {
+            if (Date.now() - start < 1000) {
+                window.open(safariFallback, '_blank');
+            }
+        }, 500);
+
+    } else {
+        window.open(`https://www.google.com/search?q=${q}`, '_blank');
+    }
+};
+
+
 document.addEventListener('DOMContentLoaded', () => {
     // Attach haptics globally — pointerdown fires instantly on mobile (no 300ms click delay)
     document.addEventListener('pointerdown', (e) => {
@@ -255,6 +324,7 @@ function loadData(isSilentPolling = false) {
         populateCityFilter(globalLeads); 
         applyFilters(); 
         renderPipeline(); 
+        if (typeof renderSchedulePanel === 'function') renderSchedulePanel();
     })
     .catch(err => {
         console.error("SUPABASE FETCH ERROR:", err);
@@ -300,36 +370,50 @@ function populateCityFilter(leads) {
 }
 
 function applyFilters() {
-    const citySelect = document.getElementById('filterCity');
-    const statusSelect = document.getElementById('filterStatus');
+    const citySelect     = document.getElementById('filterCity');
+    const statusSelect   = document.getElementById('filterStatus');
     const prioritySelect = document.getElementById('filterPriority');
-    const serviceSelect = document.getElementById('filterService');
-    
-    currentCityFilter = citySelect ? citySelect.value : 'All';
-    currentStatusFilter = statusSelect ? statusSelect.value : 'All';
+    const serviceSelect  = document.getElementById('filterService');
+
+    currentCityFilter     = citySelect     ? citySelect.value     : 'All';
+    currentStatusFilter   = statusSelect   ? statusSelect.value   : 'All';
     currentPriorityFilter = prioritySelect ? prioritySelect.value : 'All';
-    currentServiceFilter = serviceSelect ? serviceSelect.value : 'All';
+    currentServiceFilter  = serviceSelect  ? serviceSelect.value  : 'All';
+
+    // Helper: does this lead have any phone number?
+    const hasPhone = lead => !!(lead.Phone && lead.Phone.trim());
 
     visuallyFilteredLeads = globalLeads.filter(lead => {
+        // ── "No Contact" filter: ONLY show leads with no phone number ──
+        if (currentPriorityFilter === 'NoContactIn') {
+            return !hasPhone(lead);
+        }
+
+        // ── Default view: hide leads with no phone OR status = Not Interested ──
+        if (!hasPhone(lead)) return false;
+        if ((lead['Lead Status'] || '').trim() === 'Not Interested' && currentStatusFilter === 'All') return false;
+
         let matchSearch = true;
         if (currentSearch && currentSearch.trim() !== '') {
-            matchSearch = 
-                (lead.Name && lead.Name.toLowerCase().includes(currentSearch)) || 
+            matchSearch =
+                (lead.Name  && lead.Name.toLowerCase().includes(currentSearch)) ||
                 (lead.Phone && lead.Phone.toLowerCase().includes(currentSearch));
         }
-            
-        const matchCity = (currentCityFilter === 'All') || (lead._computedCity === currentCityFilter);
-        
-        const leadStatus = lead['Lead Status'] || 'New';
+
+        const matchCity   = (currentCityFilter === 'All') || (lead._computedCity === currentCityFilter);
+        const leadStatus  = lead['Lead Status'] || 'New';
         const matchStatus = (currentStatusFilter === 'All') || (leadStatus === currentStatusFilter);
-        
-        let priority = lead['Follow-Up Priority (Auto)'] || 'Low';
-        let cleanPriority = priority.replace(/[^a-zA-Z]/g, '').trim();
-        if(cleanPriority === '') cleanPriority = 'Scheduled';
-        const matchPriority = (currentPriorityFilter === 'All') || (cleanPriority === currentPriorityFilter);
+
+        let matchPriority = true;
+        if (currentPriorityFilter !== 'All') {
+            let priority     = lead['Follow-Up Priority (Auto)'] || 'Low';
+            let cleanPriority = priority.replace(/[^a-zA-Z]/g, '').trim();
+            if (cleanPriority === '') cleanPriority = 'Scheduled';
+            matchPriority = (cleanPriority === currentPriorityFilter);
+        }
 
         let matchService = true;
-        if(currentServiceFilter === 'Needs Website') {
+        if (currentServiceFilter === 'Needs Website') {
             matchService = (lead['Is Website Poor'] === 'True' || lead['Is Website Poor'] === 'true' || !lead['Website']);
         } else if (currentServiceFilter === 'Has WhatsApp') {
             matchService = (lead['Has WhatsApp'] === 'True' || lead['Has WhatsApp'] === 'true');
@@ -339,15 +423,14 @@ function applyFilters() {
     });
 
     const maxPage = Math.ceil(visuallyFilteredLeads.length / itemsPerPage);
-    if(currentPage > maxPage) currentPage = maxPage;
-    if(currentPage < 1) currentPage = 1;
+    if (currentPage > maxPage) currentPage = maxPage;
+    if (currentPage < 1)       currentPage = 1;
 
     updateDashboard(visuallyFilteredLeads);
     renderChart(visuallyFilteredLeads);
     renderTable();
-    
-    // Automatically redraw Pipeline Graphics & Cards if matching filters
-    if(document.getElementById('pipelineView').style.display !== 'none') {
+
+    if (document.getElementById('pipelineView').style.display !== 'none') {
         renderPipeline();
     }
 }
@@ -395,6 +478,7 @@ function renderTable() {
 
     pageLeads.forEach(lead => { 
         let tr = document.createElement('tr');
+        tr.setAttribute('ondblclick', `viewLead('${lead['Lead ID']}')`);
         
         let priorityText = lead['Follow-Up Priority (Auto)'] || 'Low';
         let badgeClass = 'low';
@@ -407,11 +491,28 @@ function renderTable() {
         let statusText = lead['Lead Status'] || 'New';
         let region = lead._computedCity || 'Unknown';
         if(region.length > 15) region = region.substring(0, 15) + '..';
-        
+
+        // ── Overdue / Due Today badge ─────────────────────────────────
+        let dueBadge = '';
+        const followUpDateStr = lead['Next Follow-Up Date'] || lead['Last Contacted Date'] || '';
+        if (followUpDateStr) {
+            const followUpMs = new Date(followUpDateStr).setHours(0, 0, 0, 0);
+            const todayMs    = new Date().setHours(0, 0, 0, 0);
+            if (followUpMs < todayMs) {
+                dueBadge = `<span style="margin-left:6px; padding:2px 6px; background:#fee2e2; color:#dc2626; border-radius:4px; font-size:10px; font-weight:700; vertical-align:middle; white-space:nowrap; display:inline-flex; align-items:center; gap:2px;"><i data-lucide="alarm-clock" class="icon-sm"></i> OVERDUE</span>`;
+            } else if (followUpMs === todayMs) {
+                dueBadge = `<span style="margin-left:6px; padding:2px 6px; background:#fef9c3; color:#92400e; border-radius:4px; font-size:10px; font-weight:700; vertical-align:middle; white-space:nowrap; display:inline-flex; align-items:center; gap:2px;"><i data-lucide="calendar" class="icon-sm"></i> TODAY</span>`;
+            }
+        }
+        // ─────────────────────────────────────────────────────────────
+
         let actionsHtml = `<button class="btn-primary" onclick="viewLead('${lead['Lead ID']}')">Edit</button>`;
         if (lead['Demo Site URL']) {
             actionsHtml += `<button class="btn-outline" onclick="window.open('${lead['Demo Site URL']}','_blank')" style="margin-left:8px; border-color:#8b5cf6; color:#8b5cf6; font-weight:600;" title="View live demo site">View Demo</button>`;
-            actionsHtml += `<button class="btn-send-demo" onclick="sendDemo('${lead['Lead ID']}')" style="margin-left:8px;" title="Send demo link to lead">Send Demo</button>`;
+            actionsHtml += `<button class="btn-send-demo" onclick="sendDemo('${lead['Lead ID']}')" style="margin-left:8px;" title="Send demo link via WhatsApp">Send Demo</button>`;
+            actionsHtml += `<button onclick="copyDemoMessages('${lead['Lead ID']}')" style="margin-left:8px; background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; border-radius:6px; padding:5px 10px; font-size:12px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:4px;" title="Copy both messages to clipboard"><i data-lucide="clipboard" class="icon-sm"></i> Copy Msgs</button>`;
+        } else if (window._pendingDeployMap && window._pendingDeployMap[lead['Lead ID']]) {
+            actionsHtml += `<button onclick="deployLive('${lead['Lead ID']}', this)" style="margin-left:8px; background:#7c3aed; color:#fff; border:none; border-radius:6px; padding:5px 12px; font-size:12px; font-weight:700; cursor:pointer; animation: pulse 1.5s infinite; display:inline-flex; align-items:center; gap:4px;" title="Deploy the previewed site and save URL to database"><i data-lucide="rocket" class="icon-sm"></i> Deploy &amp; Save</button>`;
         } else if (lead['Lead Status'] === 'Demo Requested') {
             const isAdmin = window.currentUser?.role === 'super_admin';
             actionsHtml += isAdmin
@@ -430,10 +531,15 @@ function renderTable() {
         const safeName = (lead.Name || 'Unnamed Lead').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         tr.innerHTML = `
             <td style="text-align: center;"><input type="checkbox" class="lead-checkbox" value="${lead['Lead ID']}" ${isChecked} onchange="toggleLeadSelection(this)" style="cursor:pointer;"></td>
-            <td data-label="Lead Name" onclick="copyTitleAndOpen('${safeName}', '${lead['Lead ID']}')" style="cursor:pointer;" title="Click to copy name and view lead">
-                <strong style="color:var(--brand-primary);">${lead.Name || 'Unnamed Lead'}</strong>
+            <td data-label="Lead Name" onclick="copyTitleAndOpen('${safeName}', '${lead['Lead ID']}'); event.stopPropagation();" style="cursor:pointer;" title="Click to copy name and view lead">
+                <strong style="color:var(--brand-primary);">${lead.Name || 'Unnamed Lead'}</strong>${dueBadge}
+                <span class="keyboard-shortcut" style="display:none; pointer-events:none;">double-click to open</span>
             </td>
-            <td data-label="Contact"><div style="font-size:13px;">${lead.Phone || lead.Email || 'No info'}</div></td>
+            <td data-label="Contact">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span onclick="copyPhone('${(lead.Phone || lead.Email || '').replace(/'/g,"\\'").replace(/"/g,'&quot;')}'); event.stopPropagation();" title="Click to copy" style="font-size:13px; cursor:pointer; padding:2px 6px; border-radius:4px; transition:background 0.15s; display:inline-flex; align-items:center; gap:4px;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''"><i data-lucide="clipboard" class="icon-sm"></i> ${lead.Phone || lead.Email || 'No info'}</span>
+                </div>
+            </td>
             <td data-label="Region"><span style="color:var(--text-muted); font-size: 13px;">${region}</span></td>
             <td data-label="Priority"><span class="badge ${badgeClass}">${cleanPriority}</span></td>
             <td data-label="Status">
@@ -447,6 +553,7 @@ function renderTable() {
         `;
         tbody.appendChild(tr);
     });
+    refreshIcons();
 }
 
 function updatePagination(curr, total, totalCount) {
@@ -559,11 +666,11 @@ function renderPipeline() {
                 </a>`;
             }
 
-            let searchQuery = encodeURIComponent(lead.Name || lead.Phone || lead.Email || '');
-            let searchLink = `<a href="https://www.google.com/search?q=${searchQuery}" target="_blank" title="Search Google" style="color:var(--brand-primary); background:#eff6ff; padding: 4px 8px; border-radius: 4px; text-decoration:none; display:flex; align-items:center; font-size: 11px; font-weight: 600;">
+            let searchQuery = lead.Name || lead.Phone || lead.Email || '';
+            let searchLink = `<button onclick="openGoogleSearch('${searchQuery.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')" title="Search Google" style="color:var(--brand-primary); background:#eff6ff; border:none; padding: 4px 8px; border-radius: 4px; cursor:pointer; display:flex; align-items:center; font-size: 11px; font-weight: 600;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 Search
-            </a>`;
+            </button>`;
 
             const safeName = (lead.Name || 'Unnamed').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
@@ -603,6 +710,7 @@ function renderPipeline() {
 
         board.appendChild(col);
     });
+    refreshIcons();
 }
 
 function allowDrop(ev) {
@@ -620,17 +728,106 @@ function dropLead(ev, targetStatus) {
     const lead = globalLeads.find(l => l['Lead ID'] === leadId);
     if(!lead || lead['Lead Status'] === targetStatus) return; // Ignore drops into same column
 
-    const leadUpdate = { 'Lead ID': leadId, 'Lead Status': targetStatus };
+    const oldStatus = lead['Lead Status'] || 'New';
+    lead['Lead Status'] = targetStatus; // optimistic
 
-    // Fire network request. Polling automatically repaints. 
+    const logMsg = `Status changed: ${oldStatus} → ${targetStatus} (pipeline drag)`;
+    const newNotes = _buildLogEntry(lead, logMsg);
+
     fetch('/api/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(leadUpdate)
+        body: JSON.stringify({ 'Lead ID': leadId, 'Lead Status': targetStatus, 'Follow-Up Notes': newNotes })
     })
-    .then(() => showToast('Status updated', 'success'))
+    .then(() => { lead['Follow-Up Notes'] = newNotes; showToast('Status updated', 'success'); })
     .catch(e => showToast('Network error updating status', 'error'));
 }
+
+// ═══════════════════════════════════════════════════
+//  ACTIVITY TIMELINE HELPERS
+// ═══════════════════════════════════════════════════
+
+function _renderActivityTimeline(rawNotes, initialLimit) {
+    if (!rawNotes || !rawNotes.trim()) {
+        return `<p style="font-size:13px; color:var(--text-muted); text-align:center; padding:20px 0;">No activity yet.</p>`;
+    }
+
+    const entries = rawNotes.split('\n---\n').map(e => e.trim()).filter(Boolean);
+    const total   = entries.length;
+    const shown   = entries.slice(0, initialLimit);
+
+    function renderCard(entry) {
+        const isAuto   = /^\[.*?\]\s*(\[SYS\]|✏️|⚡)/.test(entry);
+        const isNote   = /^\[.*?\]\s*(\[NOTE\]|📝)/.test(entry);
+        const isDeploy = /^\[.*?\]\s*(\[DEPLOY\]|🚀)/.test(entry);
+        const isSched  = /^\[.*?\]\s*(\[SCHED\]|📅|✅)/.test(entry);
+
+        // Extract timestamp if present
+        const tsMatch = entry.match(/^\[([^\]]+)\]/);
+        const ts      = tsMatch ? tsMatch[1] : '';
+        let body      = tsMatch ? entry.slice(tsMatch[0].length).trim() : entry;
+
+        // Strip structural tags and legacy emojis
+        body = body.replace(/^(\[SYS\]|\[NOTE\]|\[DEPLOY\]|\[SCHED\]|✏️|⚡|🚀|📝|📅|✅)\s*/, '');
+
+        let iconHtml = '';
+        if (isDeploy) iconHtml = '<i data-lucide="rocket" class="icon-sm"></i>';
+        else if (isSched) iconHtml = '<i data-lucide="calendar" class="icon-sm"></i>';
+        else if (isNote) iconHtml = '<i data-lucide="file-text" class="icon-sm"></i>';
+        else if (isAuto) iconHtml = '<i data-lucide="zap" class="icon-sm"></i>';
+
+        const bg     = isDeploy ? '#f5f3ff' : isNote ? '#f0fdf4' : '#f9fafb';
+        const border = isDeploy ? '#8b5cf6'  : isNote ? '#16a34a'  : '#e5e7eb';
+        const color  = isDeploy ? '#5b21b6'  : isNote ? '#15803d'  : '#6b7280';
+
+        return `
+            <div style="background:${bg}; border-left:3px solid ${border}; border-radius:4px; padding:9px 12px; margin-bottom:8px;">
+                ${ts ? `<div style="font-size:10px; color:#9ca3af; margin-bottom:4px;">${ts}</div>` : ''}
+                <div style="font-size:12px; color:${color}; white-space:pre-wrap; display:flex; align-items:flex-start;">
+                    ${iconHtml ? `<div style="margin-top:2px; margin-right:6px; flex-shrink:0;">${iconHtml}</div>` : ''}
+                    <div style="flex:1; min-width:0;">${body}</div>
+                </div>
+            </div>`;
+    }
+
+    let html = shown.map(renderCard).join('');
+
+    if (total > initialLimit) {
+        const hidden = entries.slice(initialLimit);
+        html += `
+            <div id="activityExtra" style="display:none;">${hidden.map(renderCard).join('')}</div>
+            <button onclick="_toggleActivityFull(this, ${total - initialLimit})"
+                style="width:100%; padding:8px; background:none; border:1px dashed var(--border-color); border-radius:4px; font-size:12px; color:var(--text-muted); cursor:pointer; margin-top:2px;">
+                Show all ${total} entries ▼
+            </button>`;
+    }
+
+    return html;
+}
+
+window._switchTab = function(tab) {
+    const panels = { notes: 'panelNotes', activity: 'panelActivity', schedule: 'panelSchedule' };
+    const tabs   = { notes: 'tabNotes',   activity: 'tabActivity',   schedule: 'tabSchedule'   };
+    Object.keys(panels).forEach(key => {
+        const p = document.getElementById(panels[key]);
+        const t = document.getElementById(tabs[key]);
+        if (!p || !t) return;
+        const isActive = key === tab;
+        p.style.display = isActive ? '' : 'none';
+        t.style.cssText = t.style.cssText.replace(/color:[^;]+;|font-weight:[^;]+;|border-bottom:[^;]+;/g, '');
+        t.style.cssText += isActive
+            ? 'color:var(--brand-primary); font-weight:700; border-bottom:2px solid var(--brand-primary);'
+            : 'color:var(--text-muted); font-weight:600; border-bottom:2px solid transparent;';
+    });
+};
+
+window._toggleActivityFull = function(btn, hiddenCount) {
+    const extra = document.getElementById('activityExtra');
+    if (!extra) return;
+    const expanded = extra.style.display !== 'none';
+    extra.style.display = expanded ? 'none' : '';
+    btn.textContent = expanded ? `Show all entries ▼` : `Show less ▲`;
+};
 
 // === MODAL === //
 function viewLead(id) {
@@ -638,12 +835,12 @@ function viewLead(id) {
     const lead = globalLeads.find(l => l['Lead ID'] === id);
     if(!lead) return;
 
-    let searchQ = encodeURIComponent(lead.Name || lead.Phone || '');
+    let searchQ = lead.Name || lead.Phone || '';
     document.getElementById('modalName').innerHTML = `
         <span style="vertical-align: middle;">${lead.Name || 'Unnamed Lead'}</span>
-        <a href="https://www.google.com/search?q=${searchQ}" target="_blank" style="margin-left:12px; font-size:13px; font-weight:600; padding:6px 12px; background:#eff6ff; color:var(--brand-primary); border-radius:6px; text-decoration:none; display:inline-flex; align-items:center; vertical-align: middle;">
+        <button onclick="openGoogleSearch('${searchQ.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')" style="margin-left:12px; font-size:13px; font-weight:600; padding:6px 12px; background:#eff6ff; color:var(--brand-primary); border:none; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; vertical-align: middle;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Google Search
-        </a>
+        </button>
         <button onclick="shareLead('${id}')" style="margin-left:8px; font-size:13px; font-weight:600; padding:6px 12px; background:#f0fdf4; color:#16a34a; border:none; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; vertical-align: middle;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>Share
         </button>
@@ -673,11 +870,30 @@ function viewLead(id) {
                 </select>
             </div>
         </div>
+        <!-- ── Notes / Activity / Schedule Tabs ─────────────────────────── -->
         <div class="divider"></div>
-        <div class="detail-item" style="grid-column: 1 / -1;">
-            <span class="label">Activity Log / Notes</span>
-            ${lead['Follow-Up Notes'] ? `<div style="background:#f9fafb; border:1px solid var(--border-color); border-radius:6px; padding:10px 12px; font-size:12px; color:var(--text-muted); white-space:pre-wrap; max-height:100px; overflow-y:auto; margin-bottom:8px; margin-top:6px;">${lead['Follow-Up Notes']}</div>` : ''}
-            <textarea id="editNotes" class="modal-input" placeholder="Add a new note (will be timestamped and prepended)..." style="height: 70px; resize: vertical; margin-top:${lead['Follow-Up Notes'] ? '0' : '6px'};"></textarea>
+        <div style="margin-top:4px;">
+            <!-- Tab strip -->
+            <div style="display:flex; border-bottom:2px solid var(--border-color); margin-bottom:14px; gap:0;">
+                <button id="tabNotes" onclick="_switchTab('notes')" style="background:none; border:none; padding:8px 16px; font-size:13px; font-weight:700; color:var(--brand-primary); border-bottom:2px solid var(--brand-primary); margin-bottom:-2px; cursor:pointer; display:flex; align-items:center; gap:6px;"><i data-lucide="file-text" class="icon-sm"></i> Notes</button>
+                <button id="tabActivity" onclick="_switchTab('activity')" style="background:none; border:none; padding:8px 16px; font-size:13px; font-weight:600; color:var(--text-muted); border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; display:flex; align-items:center; gap:6px;"><i data-lucide="clock" class="icon-sm"></i> Activity</button>
+                <button id="tabSchedule" onclick="_switchTab('schedule')" style="background:none; border:none; padding:8px 16px; font-size:13px; font-weight:600; color:var(--text-muted); border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; display:flex; align-items:center; gap:6px;"><i data-lucide="calendar" class="icon-sm"></i> Schedule</button>
+            </div>
+
+            <!-- Notes panel -->
+            <div id="panelNotes">
+                <textarea id="editNotes" class="modal-input" placeholder="Add a new note — it will be timestamped and saved to the activity log..." style="height:80px; resize:vertical;"></textarea>
+            </div>
+
+            <!-- Activity timeline panel -->
+            <div id="panelActivity" style="display:none;">
+                ${_renderActivityTimeline(lead['Follow-Up Notes'] || '', 4)}
+            </div>
+
+            <!-- Schedule panel -->
+            <div id="panelSchedule" style="display:none;">
+                ${_renderScheduleTab(lead)}
+            </div>
         </div>
         <div class="divider"></div>
         <div style="margin-top:16px; padding-bottom: 4px;">
@@ -687,6 +903,7 @@ function viewLead(id) {
                     <span style="font-size:12px; color:var(--text-muted); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${lead['Demo Site URL']}">${lead['Demo Site URL']}</span>
                     <button type="button" onclick="window.open('${lead['Demo Site URL']}','_blank')" style="background:#8b5cf6; color:#fff; border:none; border-radius:6px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer;">View Demo</button>
                     <button type="button" class="btn-send-demo" onclick="sendDemo('${lead['Lead ID']}')" style="padding:7px 14px; font-size:13px;">Send Demo</button>
+                    <button type="button" onclick="copyDemoMessages('${lead['Lead ID']}')" style="background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; border-radius:6px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;" title="Copy both messages to clipboard"><i data-lucide="clipboard" class="icon-sm"></i> Copy Msgs</button>
                     ${window.currentUser?.role === 'super_admin'
                         ? `<button type="button" onclick="requestDemoSite('${lead['Lead ID']}', this, true)" style="background:#f3f4f6; color:#6b7280; border:1px solid #e5e7eb; border-radius:6px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer;" title="Regenerate the demo site">Regenerate</button>
                            <button type="button" onclick="deleteDemoSite('${lead['Lead ID']}', this)" style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; border-radius:6px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer;" title="Delete this demo site permanently">Delete Site</button>`
@@ -714,6 +931,7 @@ function viewLead(id) {
     `;
 
     document.getElementById('leadModal').style.display = 'block';
+    refreshIcons();
 }
 
 function saveLead() {
@@ -722,20 +940,34 @@ function saveLead() {
     btn.innerText = 'Saving...';
 
     const lead = globalLeads.find(l => l['Lead ID'] === editingLeadId);
+    const newStatus   = document.getElementById('editStatus').value;
+    const newPriority = document.getElementById('editPriority').value;
     const newNoteText = (document.getElementById('editNotes').value || '').trim();
+
+    // Build auto-change summary
+    const changes = [];
+    if (lead && lead['Lead Status']               !== newStatus)   changes.push(`Status: ${lead['Lead Status'] || 'New'} → ${newStatus}`);
+    if (lead && lead['Follow-Up Priority (Auto)'] !== newPriority) changes.push(`Priority: ${lead['Follow-Up Priority (Auto)'] || '-'} → ${newPriority}`);
+    if (lead && document.getElementById('editPhone').value !== (lead.Phone || '')) changes.push('Phone updated');
+    if (lead && document.getElementById('editEmail').value !== (lead.Email || '')) changes.push('Email updated');
+
     let combinedNotes = lead ? (lead['Follow-Up Notes'] || '') : '';
-    if (newNoteText) {
-        const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true });
-        const entry = `[${timestamp}] ${newNoteText}`;
-        combinedNotes = combinedNotes ? `${entry}\n---\n${combinedNotes}` : entry;
+    const ts = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true });
+    if (changes.length) {
+        const autoEntry = `[${ts}] [SYS] ${changes.join(' | ')}`;
+        combinedNotes = combinedNotes ? `${autoEntry}\n---\n${combinedNotes}` : autoEntry;
     }
-    
+    if (newNoteText) {
+        const noteEntry = `[${ts}] [NOTE] ${newNoteText}`;
+        combinedNotes = combinedNotes ? `${noteEntry}\n---\n${combinedNotes}` : noteEntry;
+    }
+
     const leadUpdate = {
         'Lead ID': editingLeadId,
         'Phone': document.getElementById('editPhone').value,
         'Email': document.getElementById('editEmail').value,
-        'Lead Status': document.getElementById('editStatus').value,
-        'Follow-Up Priority (Auto)': document.getElementById('editPriority').value,
+        'Lead Status': newStatus,
+        'Follow-Up Priority (Auto)': newPriority,
         'Follow-Up Notes': combinedNotes
     };
 
@@ -785,7 +1017,9 @@ function renderChart(leads) {
     const labels = sorted.map(i => i[0]);
     const data = sorted.map(i => i[1]);
 
-    const ctx = document.getElementById('sourceChart').getContext('2d');
+    const canvasEl = document.getElementById('sourceChart');
+    if (!canvasEl) return;   // chart panel removed — skip silently
+    const ctx = canvasEl.getContext('2d');
     if(chartInstance) chartInstance.destroy();
 
     chartInstance = new Chart(ctx, {
@@ -821,16 +1055,22 @@ function toggleSelectAll(cb) {
 }
 
 function updateDeleteBtnVisibility() {
-    const btn = document.getElementById('deleteSelectedBtn');
-    const count = document.getElementById('selectedCount');
-    if(!btn) return;
-    if(selectedLeadIds.size > 0) {
-        btn.style.display = 'flex';
-        if(count) count.innerText = selectedLeadIds.size;
-    } else {
-        btn.style.display = 'none';
+    const bar        = document.getElementById('bulkActionBar');
+    const countLabel = document.getElementById('bulkCountLabel');
+    const countSpan  = document.getElementById('selectedCount');
+    const deleteBtn  = document.getElementById('deleteSelectedBtn');
+    const n = selectedLeadIds.size;
+
+    if (bar) bar.style.display = n > 0 ? 'flex' : 'none';
+    if (countLabel) countLabel.textContent = `${n} lead${n !== 1 ? 's' : ''} selected`;
+    if (countSpan)  countSpan.textContent  = n;
+    if (deleteBtn)  deleteBtn.style.display = n > 0 ? 'flex' : 'none';
+
+    if (n === 0) {
         const selectAll = document.getElementById('selectAllLeads');
-        if(selectAll) selectAll.checked = false;
+        if (selectAll) selectAll.checked = false;
+        const bulkSel = document.getElementById('bulkStatusSelect');
+        if (bulkSel) bulkSel.value = '';
     }
 }
 
@@ -860,6 +1100,80 @@ function deleteSelectedLeads() {
         btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg><span class="btn-text">Delete (<span id="selectedCount">${selectedLeadIds.size}</span>)</span>`;
     });
 }
+
+// ── Export current filtered view as CSV ──────────────────────────────────────
+window.exportCSV = function() {
+    if (!visuallyFilteredLeads || visuallyFilteredLeads.length === 0) {
+        showToast('No leads to export.', 'warning');
+        return;
+    }
+    const cols = ['Lead ID','Name','Phone','Email','Location','Lead Status',
+                  'Follow-Up Priority (Auto)','Source','Website','Has WhatsApp',
+                  'Budget','Expected Value','Probability (%)','Demo Site URL'];
+    const escape = v => {
+        if (v == null) return '';
+        const s = String(v).replace(/"/g, '""');
+        return /[,"\n]/.test(s) ? `"${s}"` : s;
+    };
+    const rows = [cols.join(',')];
+    visuallyFilteredLeads.forEach(lead => rows.push(cols.map(c => escape(lead[c])).join(',')));
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = Object.assign(document.createElement('a'), {
+        href: url, download: `darion-leads-${new Date().toISOString().split('T')[0]}.csv`
+    });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`Exported ${visuallyFilteredLeads.length} leads as CSV.`, 'success');
+};
+
+// ── Bulk-update status for selected leads ────────────────────────────────────
+window.bulkUpdateSelectedStatus = async function() {
+    const newStatus = document.getElementById('bulkStatusSelect')?.value;
+    if (!newStatus) { showToast('Please choose a status first.', 'warning'); return; }
+    if (selectedLeadIds.size === 0) return;
+    const n = selectedLeadIds.size;
+    if (!confirm(`Change status of ${n} lead${n !== 1 ? 's' : ''} to "${newStatus}"?`)) return;
+    showToast(`Updating ${n} leads...`, 'info');
+    try {
+        const leadIds = Array.from(selectedLeadIds);
+        const res = await fetch('/api/bulk-update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ leadIds, fields: { 'Lead Status': newStatus } })
+        });
+        if (!res.ok) throw new Error(`Bulk update failed: ${res.status}`);
+        const ts = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true });
+        const logLine = `[${ts}] [SYS] Status → ${newStatus} (bulk selection)`;
+        globalLeads.forEach(l => {
+            if (selectedLeadIds.has(l['Lead ID'])) {
+                l['Lead Status'] = newStatus;
+                const existing = l['Follow-Up Notes'] || '';
+                l['Follow-Up Notes'] = existing ? `${logLine}\n---\n${existing}` : logLine;
+            }
+        });
+        leadIds.forEach(id => {
+            const l = globalLeads.find(x => x['Lead ID'] === id);
+            if (l) fetch('/api/update', { method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ 'Lead ID': id, 'Follow-Up Notes': l['Follow-Up Notes'] })
+            }).catch(() => {});
+        });
+        selectedLeadIds.clear();
+        updateDeleteBtnVisibility();
+        lastDataFingerprint = '';
+        applyFilters();
+        showToast(`${n} leads updated to "${newStatus}".`, 'success');
+    } catch (err) {
+        showToast('Bulk update failed: ' + err.message, 'error');
+    }
+};
+
+// ── Clear all selections ─────────────────────────────────────────────────────
+window.clearSelection = function() {
+    selectedLeadIds.clear();
+    document.querySelectorAll('.lead-checkbox').forEach(c => c.checked = false);
+    updateDeleteBtnVisibility();
+};
 
 window.copyTitleAndOpen = function(text, id) {
     if (navigator.clipboard) {
@@ -971,27 +1285,30 @@ window.submitDemoGeneration = async function(isAuto = false) {
 
     // If auto: use lead data as-is. If custom: read form values.
     const payload = isAuto ? {
-        title:     lead.Name      || 'Unnamed Lead',
-        contact:   lead.Phone     || 'N/A',
+        title:     lead.Name      || 'Business',
+        contact:   lead.Phone     || lead.Email || 'N/A',
         email:     lead.Email     || '',
         location:  lead.Location  || '',
-        address:   lead.Location  || '',
-        details:   lead['Category (Pitch Angle)'] || lead.Notes || '',
+        address:   lead.Location  || 'India',
+        details:   lead['Category (Pitch Angle)'] || lead.Notes || 'Professional services business.',
         logo_text: (lead.Name || 'XX').substring(0, 2).toUpperCase(),
     } : {
-        title:     document.getElementById('dm_title').value   || lead.Name || 'Unnamed Lead',
-        contact:   document.getElementById('dm_contact').value || lead.Phone || 'N/A',
-        email:     document.getElementById('dm_email').value   || lead.Email || '',
-        location:  document.getElementById('dm_location').value || lead.Location || '',
-        address:   document.getElementById('dm_location').value || lead.Location || '',
-        details:   document.getElementById('dm_details').value || '',
-        logo_text: document.getElementById('dm_logo').value.toUpperCase() || 'XX',
+        title:     document.getElementById('dm_title').value.trim()   || lead.Name || 'Business',
+        contact:   document.getElementById('dm_contact').value.trim() || lead.Phone || lead.Email || 'N/A',
+        email:     document.getElementById('dm_email').value.trim()   || lead.Email || '',
+        location:  document.getElementById('dm_location').value.trim() || lead.Location || '',
+        address:   document.getElementById('dm_location').value.trim() || lead.Location || 'India',
+        details:   document.getElementById('dm_details').value.trim() || lead['Category (Pitch Angle)'] || 'Professional services business.',
+        logo_text: document.getElementById('dm_logo').value.trim().toUpperCase() || (lead.Name || 'XX').substring(0, 2).toUpperCase(),
     };
 
     const template = document.getElementById('dm_template')?.value || DEFAULT_TEMPLATE;
 
     await requestDemoSite(leadId, null, fromModal, payload, template);
 };
+
+// Stores leadId -> clientId for previews that have been opened but not yet deployed+saved
+window._pendingDeployMap = window._pendingDeployMap || {};
 
 // === DEMO SITE GENERATION === //
 const DEFAULT_TEMPLATE = '4';   // Template 4 = Horizon Dream Home
@@ -1002,12 +1319,12 @@ window.requestDemoSite = async function(id, btn, fromModal = false, customPayloa
     if (!lead) return;
 
     const origText = btn ? btn.innerHTML : '';
-    if (btn) { btn.disabled = true; btn.innerHTML = 'Deploying...'; }
+    if (btn) { btn.disabled = true; btn.innerHTML = 'Preparing...'; }
 
     const name = lead.Name || 'Unnamed Lead';
     const clientPayload = customPayload || {
         title:     name || 'Business',
-        contact:   (lead.Phone && lead.Phone.trim()) || (lead.Email && lead.Email.trim()) || 'Contact us',
+        contact:   (lead.Phone && lead.Phone.trim()) || (lead.Email && lead.Email.trim()) || 'N/A',
         email:     lead.Email    || '',
         location:  lead.Location || '',
         address:   (lead.Location && lead.Location.trim()) || 'India',
@@ -1020,8 +1337,8 @@ window.requestDemoSite = async function(id, btn, fromModal = false, customPayloa
     const chosenTemplate = template || DEFAULT_TEMPLATE;
 
     try {
-        // ── Step 1: Create client record (proxied through local server to avoid CORS) ──
-        showToast('Creating demo site...', 'info');
+        // ── Step 1: Create client record ──────────────────────────────────
+        showToast('Step 1/2 — Creating client record...', 'info');
         const createRes = await fetch('/api/proxy-backend', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1032,7 +1349,7 @@ window.requestDemoSite = async function(id, btn, fromModal = false, customPayloa
         const clientId   = clientData.id;
 
         // ── Step 2: Apply selected template ──────────────────────────────
-        showToast('Applying template...', 'info');
+        showToast('Step 2/2 — Applying template...', 'info');
         const tplRes = await fetch('/api/proxy-backend', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1040,12 +1357,17 @@ window.requestDemoSite = async function(id, btn, fromModal = false, customPayloa
         });
         if (!tplRes.ok) throw new Error(`Template apply failed: ${tplRes.status}`);
 
-        // ── Step 3: Open Preview Page ──────────────────────────────────────
-        showToast('Opening preview...', 'info');
+        // ── Step 3: Open Railway preview page — user reviews then clicks Deploy & Save in CRM ──
         const previewUrl = `${BACKEND_URL}/preview/${clientId}?source=crm&leadId=${id}`;
         window.open(previewUrl, '_blank');
 
+        // Store clientId so deployLive() can deploy + save URL after user reviews
+        window._pendingDeployMap[id] = clientId;
+        renderTable();   // re-render immediately to show the Deploy & Save button
+
         if (btn) { btn.disabled = false; btn.innerHTML = origText; }
+        showToast('Preview opened! Review it, then click \"Deploy & Save\" on this lead.', 'success');
+
     } catch (err) {
         console.error('requestDemoSite error:', err);
         showToast('Demo generation failed: ' + err.message, 'error');
@@ -1053,13 +1375,330 @@ window.requestDemoSite = async function(id, btn, fromModal = false, customPayloa
     }
 };
 
-// Listen for DEMO_DEPLOYED postMessage from the preview page
-window.addEventListener('message', async function(event) {
-    if (!event.data || event.data.type !== 'DEMO_DEPLOYED') return;
-    const { leadId, url } = event.data;
-    if (!url) return;
+// ═══════════════════════════════════════════════════
+//  FOLLOW-UP SCHEDULER
+// ═══════════════════════════════════════════════════
 
-    // Find the lead in memory and update immediately so buttons show at once
+let _firedNotifications = new Set();
+let _notificationPermGranted = false;
+
+if ("Notification" in window && Notification.permission === "granted") {
+    _notificationPermGranted = true;
+}
+
+window.requestNotificationPermission = function() {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") {
+        _notificationPermGranted = true;
+        showToast('Notifications are already enabled', 'info');
+    } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                _notificationPermGranted = true;
+                showToast('Notifications enabled successfully', 'success');
+            }
+        });
+    } else {
+        showToast('Notification permission was denied in browser settings', 'warning');
+    }
+}
+
+window.checkNotifications = function() {
+    if (!_notificationPermGranted) return;
+    
+    const now = new Date();
+    
+    globalLeads.forEach(lead => {
+        const dtStr = lead['Next Follow-Up Date'];
+        if (!dtStr || !dtStr.includes('T')) return; 
+        
+        const schedTime = new Date(dtStr);
+        if (isNaN(schedTime.getTime())) return;
+        
+        const diffMs = schedTime.getTime() - now.getTime();
+        
+        // If scheduled time is within the next 60 seconds or just passed (up to 1 min ago)
+        if (diffMs >= -60000 && diffMs <= 60000) {
+            const leadId = lead['Lead ID'];
+            if (!_firedNotifications.has(leadId)) {
+                _firedNotifications.add(leadId);
+                
+                const title = `Darion CRM 🔔`;
+                const options = {
+                    body: `Follow up with ${lead.Name || 'Lead'}!\nDue Now`,
+                };
+                
+                const notif = new Notification(title, options);
+                notif.onclick = function() {
+                    window.focus();
+                    viewLead(leadId);
+                    this.close();
+                };
+            }
+        }
+    });
+}
+setInterval(checkNotifications, 60000);
+
+window._renderScheduleTab = function(lead) {
+    let dtStr = lead['Next Follow-Up Date'] || '';
+    let dVal = '';
+    let tVal = '';
+    if (dtStr && dtStr.includes('T')) {
+        const parts = dtStr.split('T');
+        dVal = parts[0];
+        tVal = parts[1].substring(0,5);
+    } else if (dtStr) {
+        dVal = dtStr;
+    }
+    
+    // Try to extract note from Activity log
+    let note = '';
+    const notes = lead['Follow-Up Notes'] || '';
+    const match = notes.match(/📅 Scheduled follow-up for .*? - "(.*?)"/);
+    if (match) {
+        note = match[1];
+    }
+
+    return `
+        <div style="padding:4px 0;">
+            <div class="detail-item">
+                <span class="label">Date</span>
+                <input type="date" id="schedDate" class="modal-input" value="${dVal}">
+            </div>
+            <div class="detail-item" style="margin-top:10px;">
+                <span class="label">Time</span>
+                <input type="time" id="schedTime" class="modal-input" value="${tVal}">
+            </div>
+            <div class="detail-item" style="margin-top:10px;">
+                <span class="label">Note (optional)</span>
+                <input type="text" id="schedNote" class="modal-input" value="${note}" placeholder="e.g. Discuss pricing for website">
+            </div>
+            
+            <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" class="btn-outline" onclick="requestNotificationPermission()" style="padding:6px 12px; font-size:12px;">🔔 Enable Notifications</button>
+                <button type="button" class="btn-primary" onclick="saveSchedule('${lead['Lead ID']}', this)" style="background:#7c3aed; padding:6px 16px;">Save Schedule</button>
+            </div>
+        </div>
+    `;
+}
+
+window.saveSchedule = function(leadId, btn) {
+    const dVal = document.getElementById('schedDate').value;
+    const tVal = document.getElementById('schedTime').value;
+    const nVal = document.getElementById('schedNote').value.trim();
+    
+    if (!dVal || !tVal) {
+        showToast('Please select both date and time', 'warning');
+        return;
+    }
+    const isoString = `${dVal}T${tVal}:00`;
+    
+    const ts = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true });
+    let logLine = `[${ts}] [SCHED] Scheduled follow-up for ${dVal} at ${tVal}`;
+    if (nVal) logLine += ` - "${nVal}"`;
+    
+    const lead = globalLeads.find(l => l['Lead ID'] === leadId);
+    let combinedNotes = lead ? (lead['Follow-Up Notes'] || '') : '';
+    combinedNotes = combinedNotes ? `${logLine}\n---\n${combinedNotes}` : logLine;
+    
+    const payload = {
+        'Lead ID': leadId,
+        'Next Follow-Up Date': isoString,
+        'Follow-Up Notes': combinedNotes
+    };
+    
+    const origText = btn.innerText;
+    btn.innerText = 'Saving...';
+    
+    fetch('/api/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.status === 'success') {
+            if(lead) {
+                lead['Next Follow-Up Date'] = isoString;
+                lead['Follow-Up Notes'] = combinedNotes;
+            }
+            showToast('Schedule saved', 'success');
+            _firedNotifications.delete(leadId);
+            
+            document.getElementById('panelSchedule').innerHTML = _renderScheduleTab(lead);
+            renderSchedulePanel();
+        } else {
+            showToast('Error: ' + data.error, 'error');
+            btn.innerText = origText;
+        }
+    })
+    .catch(e => {
+        showToast('Network error', 'error');
+        btn.innerText = origText;
+    });
+}
+
+window.renderSchedulePanel = function() {
+    const wrap = document.getElementById('schedulePanelWrap');
+    const body = document.getElementById('schedulePanelBody');
+    const countBadge = document.getElementById('schedulePanelCount');
+    
+    if (!wrap || !body) return;
+    
+    const today = new Date();
+    const todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+    
+    const scheduledLeads = globalLeads.filter(l => {
+        const dtStr = l['Next Follow-Up Date'];
+        return dtStr && dtStr.startsWith(todayStr) && dtStr.includes('T');
+    });
+    
+    scheduledLeads.sort((a,b) => {
+        return new Date(a['Next Follow-Up Date']).getTime() - new Date(b['Next Follow-Up Date']).getTime();
+    });
+    
+    if (scheduledLeads.length === 0) {
+        wrap.style.display = 'none';
+        return;
+    }
+    
+    wrap.style.display = 'block';
+    countBadge.innerText = scheduledLeads.length;
+    
+    body.innerHTML = scheduledLeads.map(lead => {
+        const dtStr = lead['Next Follow-Up Date'];
+        const parts = dtStr.split('T');
+        if (parts.length < 2) return '';
+        const tVal = parts[1].substring(0,5);
+        
+        const [h,m] = tVal.split(':');
+        const ampm = +h >= 12 ? 'PM' : 'AM';
+        const h12 = (+h % 12) || 12;
+        const timeStr = `${h12}:${m} ${ampm}`;
+        
+        let note = '';
+        const notes = lead['Follow-Up Notes'] || '';
+        const match = notes.match(/\[SCHED\] Scheduled follow-up for .*? - "(.*?)"/);
+        if (match) {
+            note = match[1];
+        }
+        
+        let callLink = '';
+        if(lead.Phone && lead.Phone.trim().length >= 4) {
+            let cleanPhone = lead.Phone.replace(/[^0-9+]/g, '');
+            callLink = `<a href="tel:${cleanPhone}" title="Call" style="color:var(--accent-green); text-decoration:none; margin-right:8px; font-weight:600; font-size:12px;">Call</a>`;
+        }
+        
+        return `
+            <div style="background:#fff; border:1px solid #e5e7eb; border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-size:13px; font-weight:700; color:var(--text-main);">
+                        <span style="color:#d97706; margin-right:6px;">${timeStr}</span>
+                        ${lead.Name || 'Unnamed'}
+                    </div>
+                    ${note ? `<div style="font-size:12px; color:var(--text-muted); margin-top:2px;">"${note}"</div>` : ''}
+                </div>
+                <div style="display:flex; align-items:center;">
+                    ${callLink}
+                    <button onclick="viewLead('${lead['Lead ID']}')" style="background:none; border:none; color:#3b82f6; font-size:12px; font-weight:600; cursor:pointer; margin-right:8px;">Edit</button>
+                    <button onclick="markScheduleDone('${lead['Lead ID']}', this)" style="background:#f0fdf4; border:1px solid #bbf7d0; color:#16a34a; font-size:12px; font-weight:600; padding:4px 8px; border-radius:4px; cursor:pointer; display:flex; align-items:center; gap:4px;">Mark Done</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+};
+
+window._toggleSchedulePanel = function() {
+    const body = document.getElementById('schedulePanelBody');
+    const chevron = document.getElementById('schedulePanelChevron');
+    if (body.style.display === 'none') {
+        body.style.display = 'flex';
+        chevron.innerText = '▼';
+    } else {
+        body.style.display = 'none';
+        chevron.innerText = '▲';
+    }
+};
+
+window.markScheduleDone = function(leadId, btn) {
+    const lead = globalLeads.find(l => l['Lead ID'] === leadId);
+    if (!lead) return;
+    
+    if (btn) btn.innerText = '...';
+    
+    const logLine = `[SYS] Scheduled follow-up completed`;
+    const newNotes = _buildLogEntry(lead, logLine);
+    
+    const payload = {
+        'Lead ID': leadId,
+        'Next Follow-Up Date': '', 
+        'Follow-Up Notes': newNotes
+    };
+    
+    const doStatusUpdate = confirm("Update lead status to 'Contacted'?");
+    if (doStatusUpdate) {
+        payload['Lead Status'] = 'Contacted';
+    }
+    
+    fetch('/api/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.status === 'success') {
+            if(lead) {
+                lead['Next Follow-Up Date'] = '';
+                lead['Follow-Up Notes'] = newNotes;
+                if (doStatusUpdate) lead['Lead Status'] = 'Contacted';
+            }
+            showToast('Follow-up marked as done', 'success');
+            renderSchedulePanel();
+            if(editingLeadId === leadId) {
+                viewLead(leadId); 
+            }
+        } else {
+            showToast('Error: ' + data.error, 'error');
+            if (btn) btn.innerText = 'Mark Done';
+        }
+    })
+    .catch(e => {
+        showToast('Network error', 'error');
+        if (btn) btn.innerText = 'Mark Done';
+    });
+};
+// Poll /api/leads every 5 s (up to 5 min) until Demo Site URL appears for this lead
+function _startDemoUrlPoller(leadId) {
+    const already = globalLeads.find(l => l['Lead ID'] === leadId);
+    if (already && already['Demo Site URL']) return; // already have it
+
+    const MAX_MS   = 5 * 60 * 1000; // 5 minutes
+    const INTERVAL = 5000;           // 5 seconds
+    const started  = Date.now();
+
+    const poll = setInterval(async () => {
+        if (Date.now() - started > MAX_MS) {
+            clearInterval(poll);
+            showToast('Demo URL not detected after 5 min — please refresh the page.', 'warning');
+            return;
+        }
+        try {
+            const res  = await fetch('/api/leads');
+            const data = await res.json();
+            if (!Array.isArray(data)) return;
+            const freshLead = data.find(l => l['Lead ID'] === leadId);
+            if (freshLead && freshLead['Demo Site URL']) {
+                clearInterval(poll);
+                _applyDemoUrl(leadId, freshLead['Demo Site URL']);
+            }
+        } catch(e) { /* network blip – keep polling */ }
+    }, INTERVAL);
+}
+
+// Apply a newly-discovered Demo Site URL into memory + re-render UI
+function _applyDemoUrl(leadId, url) {
     const lead = globalLeads.find(l => l['Lead ID'] === leadId);
     if (lead) {
         lead['Demo Site URL'] = url;
@@ -1068,27 +1707,77 @@ window.addEventListener('message', async function(event) {
         const modal = document.getElementById('leadModal');
         if (modal && modal.style.display === 'block' && editingLeadId === leadId) viewLead(leadId);
     }
+    lastDataFingerprint = '';
+    showToast('Demo deployed! View Demo and Send Demo buttons are now active.', 'success');
+}
 
-    // Persist to Supabase
-    if (leadId) {
-        try {
-            await fetch('/api/update', {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ 'Lead ID': leadId, 'Demo Site URL': url })
-            });
-            // Force reload so fingerprint refreshes and poll won't wipe the URL
-            lastDataFingerprint = '';
-            loadData(true);
-            showToast('Demo deployed! View Demo and Send Demo buttons are now active.', 'success');
-        } catch(e) {
-            console.error('Failed to save Demo Site URL:', e);
-            showToast('Demo live but could not save URL — please refresh.', 'warning');
-        }
+// Listen for DEMO_DEPLOYED postMessage from the preview page (fast path)
+window.addEventListener('message', async function(event) {
+    if (!event.data || event.data.type !== 'DEMO_DEPLOYED') return;
+    const { leadId, url } = event.data;
+    if (!url || !leadId) return;
+
+    // Update in-memory + UI immediately via shared helper
+    _applyDemoUrl(leadId, url);
+
+    // Persist to Supabase in case the preview page hasn't done so yet
+    try {
+        await fetch('/api/update', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ 'Lead ID': leadId, 'Demo Site URL': url })
+        });
+        lastDataFingerprint = '';
+        loadData(true);
+    } catch(e) {
+        console.error('Failed to save Demo Site URL:', e);
+        showToast('Demo live but could not save URL — please refresh.', 'warning');
     }
 });
 
+// Called when user clicks "Deploy & Save" after reviewing the preview tab.
+window.deployLive = async function(leadId, btn) {
+    const clientId = window._pendingDeployMap && window._pendingDeployMap[leadId];
+    if (!clientId) {
+        showToast('No pending preview found. Please generate the demo again.', 'warning');
+        return;
+    }
+    const origText = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = 'Deploying...'; }
+    showToast('Deploying to Vercel — this may take ~30 s...', 'info');
 
+    try {
+        const deployRes = await fetch('/api/deploy', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ client_id: clientId })
+        });
+        if (!deployRes.ok) {
+            const e = await deployRes.json().catch(() => ({}));
+            throw new Error(e.error || `Deploy failed: ${deployRes.status}`);
+        }
+        const { url: siteUrl } = await deployRes.json();
+        if (!siteUrl) throw new Error('No URL returned from deploy');
+
+        const demoLead  = globalLeads.find(l => l['Lead ID'] === leadId);
+        const demoNotes = demoLead ? _buildLogEntry(demoLead, `[DEPLOY] Demo deployed: ${siteUrl}`) : '';
+        await fetch('/api/update', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ 'Lead ID': leadId, 'Demo Site URL': siteUrl, ...(demoNotes ? { 'Follow-Up Notes': demoNotes } : {}) })
+        });
+        if (demoLead && demoNotes) demoLead['Follow-Up Notes'] = demoNotes;
+
+        delete window._pendingDeployMap[leadId];
+        _applyDemoUrl(leadId, siteUrl);
+        window.open(siteUrl, '_blank');
+
+    } catch (err) {
+        console.error('deployLive error:', err);
+        showToast('Deploy failed: ' + err.message, 'error');
+        if (btn) { btn.disabled = false; btn.innerHTML = origText; }
+    }
+};
 
 window.deleteDemoSite = async function(leadId, btn) {
     if (!confirm('Delete this demo site? The Vercel deployment will remain but the link will be removed from this lead.')) return;
@@ -1130,29 +1819,82 @@ window.sendDemo = function(leadId) {
         return;
     }
     const demoUrl  = lead['Demo Site URL'];
-    const leadName = lead.Name || 'your business';
-    const message = `Hi! Here's a demo website we created for ${leadName}: ${demoUrl} — Let us know if you'd like to customize it!`;
+
+    const msgTelugu = `నమస్కారం సర్,\n\nమన చర్చను అనుసరించి, మీ ప్లాట్‌ఫారమ్ కోసం ప్రతిపాదిత దిశను ప్రదర్శించడానికి మేము ఒక లైవ్ ప్రోటోటైప్‌ను సృష్టించాము:\n\n${demoUrl}\n\nఇది వినియోగదారు అనుభవం, నిర్మాణం మరియు స్కేలబిలిటీ విధానాన్ని ప్రదర్శిస్తుంది.\n\nఫీచర్లు, బ్రాండింగ్ మరియు ఆప్టిమైజేషన్లతో సహా, తుది ఉత్పత్తి మీ అవసరాలకు అనుగుణంగా పూర్తిగా అనుకూలీకరించబడుతుంది.\n\nపూర్తిస్థాయి అభివృద్ధిలోకి వెళ్లే ముందు దీనిని మరింత మెరుగుపరచడానికి మీ అభిప్రాయాన్ని మేము అభినందిస్తాము.\n\nధన్యవాదాలు,\nవిజయ్ కళ్యాణ్ ఎన్\nస్ట్రాటజీ కన్సల్టెంట్ | డారియన్ టెక్నాలజీస్\nఫోన్: (929) 136-3204\ntech.darion.in`;
+
+    const msgEnglish = `Hi Sir,\n\nFollowing our discussion, we've created a live prototype to present the proposed direction for your platform:\n\n${demoUrl}\n\nThis showcases the user experience, structure, and scalability approach.\n\nThe final product will be fully customized to your requirements, including features, branding, and optimizations.\n\nWe would appreciate your feedback to refine this further before moving into full development.\n\nRegards,\nVijay Kalyan N\nStrategy Consultant | Darion Technologies\nP: (929) 136-3204\ntech.darion.in`;
 
     if (lead.Phone && lead.Phone.trim().length >= 4) {
         const cleanPhone = lead.Phone.replace(/[^0-9+]/g, '');
-        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
-        showToast('Opening WhatsApp with demo link...', 'success');
+        // Open Telugu message first, English message 300 ms later
+        // (small delay prevents browsers from blocking the second popup)
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msgTelugu)}`, '_blank');
+        setTimeout(() => {
+            window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msgEnglish)}`, '_blank');
+        }, 300);
+        showToast('Opening WhatsApp — Telugu & English messages sent!', 'success');
     } else {
-        navigator.clipboard.writeText(demoUrl).then(() => {
-            showToast('Demo link copied to clipboard.', 'success');
+        // No phone — copy both messages to clipboard
+        const combined = msgTelugu + '\n\n---\n\n' + msgEnglish;
+        navigator.clipboard.writeText(combined).then(() => {
+            showToast('Both messages copied to clipboard (no phone on record).', 'success');
         }).catch(() => {
             let ta = document.createElement('textarea');
-            ta.value = demoUrl;
+            ta.value = combined;
             ta.style.position = 'fixed';
             document.body.appendChild(ta);
             ta.focus(); ta.select();
             try { document.execCommand('copy'); } catch(e) {}
             document.body.removeChild(ta);
-            showToast('Demo link copied.', 'success');
+            showToast('Both messages copied to clipboard.', 'success');
         });
     }
 };
 
+// Copy both Telugu + English demo messages to clipboard
+window.copyDemoMessages = function(leadId) {
+    const lead = globalLeads.find(l => l['Lead ID'] === leadId);
+    if (!lead || !lead['Demo Site URL']) {
+        showToast('No deployed demo site found for this lead.', 'warning');
+        return;
+    }
+    const demoUrl = lead['Demo Site URL'];
+
+    const msgTelugu = `నమస్కారం సర్,\n\nమన చర్చను అనుసరించి, మీ ప్లాట్‌ఫారమ్ కోసం ప్రతిపాదిత దిశను ప్రదర్శించడానికి మేము ఒక లైవ్ ప్రోటోటైప్‌ను సృష్టించాము:\n\n${demoUrl}\n\nఇది వినియోగదారు అనుభవం, నిర్మాణం మరియు స్కేలబిలిటీ విధానాన్ని ప్రదర్శిస్తుంది.\n\nఫీచర్లు, బ్రాండింగ్ మరియు ఆప్టిమైజేషన్లతో సహా, తుది ఉత్పత్తి మీ అవసరాలకు అనుగుణంగా పూర్తిగా అనుకూలీకరించబడుతుంది.\n\nపూర్తిస్థాయి అభివృద్ధిలోకి వెళ్లే ముందు దీనిని మరింత మెరుగుపరచడానికి మీ అభిప్రాయాన్ని మేము అభినందిస్తాము.\n\nధన్యవాదాలు,\nవిజయ్ కళ్యాణ్ ఎన్\nస్ట్రాటజీ కన్సల్టెంట్ | డారియన్ టెక్నాలజీస్\nఫోన్: (929) 136-3204\ntech.darion.in`;
+
+    const msgEnglish = `Hi Sir,\n\nFollowing our discussion, we've created a live prototype to present the proposed direction for your platform:\n\n${demoUrl}\n\nThis showcases the user experience, structure, and scalability approach.\n\nThe final product will be fully customized to your requirements, including features, branding, and optimizations.\n\nWe would appreciate your feedback to refine this further before moving into full development.\n\nRegards,\nVijay Kalyan N\nStrategy Consultant | Darion Technologies\nP: (929) 136-3204\ntech.darion.in`;
+
+    const combined = msgTelugu + '\n\n---\n\n' + msgEnglish;
+    navigator.clipboard.writeText(combined).then(() => {
+        showToast('Both messages copied to clipboard!', 'success');
+    }).catch(() => {
+        let ta = document.createElement('textarea');
+        ta.value = combined;
+        ta.style.position = 'fixed';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        try { document.execCommand('copy'); } catch(e) {}
+        document.body.removeChild(ta);
+        showToast('Both messages copied to clipboard!', 'success');
+    });
+};
+
+// Copy phone number to clipboard
+window.copyPhone = function(phone) {
+    if (!phone || phone === 'No info') return;
+    navigator.clipboard.writeText(phone).then(() => {
+        showToast('Phone copied: ' + phone, 'success');
+    }).catch(() => {
+        let ta = document.createElement('textarea');
+        ta.value = phone;
+        ta.style.position = 'fixed';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        try { document.execCommand('copy'); } catch(e) {}
+        document.body.removeChild(ta);
+        showToast('Phone copied!', 'success');
+    });
+};
 window.viewDemoWeb = async function(id) {
     const lead = globalLeads.find(l => l['Lead ID'] === id);
     if (!lead) return;
@@ -1271,13 +2013,16 @@ window.filterDueToday = function() {
 window.quickUpdateStatus = function(id, status) {
     const lead = globalLeads.find(l => l['Lead ID'] === id);
     if (!lead || lead['Lead Status'] === status) return;
+    const oldStatus = lead['Lead Status'] || 'New';
     lead['Lead Status'] = status; // Optimistic update
+    const logMsg  = `Status changed: ${oldStatus} → ${status} (quick update)`;
+    const newNotes = _buildLogEntry(lead, logMsg);
     fetch('/api/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 'Lead ID': id, 'Lead Status': status })
+        body: JSON.stringify({ 'Lead ID': id, 'Lead Status': status, 'Follow-Up Notes': newNotes })
     })
-    .then(() => showToast(`Status updated to ${status}`, 'success'))
+    .then(() => { lead['Follow-Up Notes'] = newNotes; showToast(`Status updated to ${status}`, 'success'); })
     .catch(() => showToast('Failed to update status', 'error'));
 };
 
@@ -1539,4 +2284,141 @@ window.togglePassVis = function(inputId, btn) {
     btn.innerHTML = isPass
         ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`
         : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+};
+
+// ═══════════════════════════════════════════════════
+//  ACTIVITY LOG HELPER
+// ═══════════════════════════════════════════════════
+
+/**
+ * Prepends a timestamped log line to a lead's Follow-Up Notes (in memory only).
+ * Call this before any fetch('/api/update') to include the new notes in the payload.
+ * Returns the new combined notes string.
+ */
+function _buildLogEntry(lead, message) {
+    const ts = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true });
+    const entry = `[${ts}] ${message}`;
+    const existing = lead ? (lead['Follow-Up Notes'] || '') : '';
+    return existing ? `${entry}\n---\n${existing}` : entry;
+}
+
+// ═══════════════════════════════════════════════════
+//  REGION BULK ACTION
+// ═══════════════════════════════════════════════════
+
+window.openRegionActionModal = function() {
+    const citySelect = document.getElementById('regionActionCity');
+    if (!citySelect) return;
+
+    // Populate from all distinct _computedCity values in globalLeads
+    const cities = [...new Set(globalLeads.map(l => l._computedCity).filter(Boolean))].sort();
+    citySelect.innerHTML = '<option value="">-- Select Region --</option>';
+    cities.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = opt.textContent = c;
+        citySelect.appendChild(opt);
+    });
+
+    // Reset count chip + disable apply btn
+    const countEl = document.getElementById('regionLeadCount');
+    const applyBtn = document.getElementById('applyRegionActionBtn');
+    if (countEl) { countEl.style.display = 'none'; countEl.textContent = ''; }
+    if (applyBtn) applyBtn.disabled = true;
+
+    document.getElementById('regionActionModal').style.display = 'block';
+};
+
+window.closeRegionActionModal = function() {
+    document.getElementById('regionActionModal').style.display = 'none';
+};
+
+window.updateRegionCount = function() {
+    const city    = document.getElementById('regionActionCity').value;
+    const countEl = document.getElementById('regionLeadCount');
+    const applyBtn = document.getElementById('applyRegionActionBtn');
+
+    if (!city) {
+        if (countEl) { countEl.style.display = 'none'; }
+        if (applyBtn) applyBtn.disabled = true;
+        return;
+    }
+
+    const count = globalLeads.filter(l => l._computedCity === city).length;
+    if (countEl) {
+        countEl.textContent = `${count} lead${count !== 1 ? 's' : ''} in "${city}" will be updated.`;
+        countEl.style.display = 'block';
+    }
+    if (applyBtn) {
+        applyBtn.disabled = (count === 0);
+        applyBtn.textContent = `Apply to All ${count} Lead${count !== 1 ? 's' : ''}`;
+    }
+};
+
+window.applyRegionAction = async function() {
+    const city      = document.getElementById('regionActionCity').value;
+    const newStatus = document.getElementById('regionActionStatus').value;
+    const applyBtn  = document.getElementById('applyRegionActionBtn');
+    if (!city || !newStatus) return;
+
+    const affected = globalLeads.filter(l => l._computedCity === city);
+    if (affected.length === 0) return;
+
+    const confirmed = confirm(
+        `Mark all ${affected.length} leads in "${city}" as "${newStatus}"?\n\nThis cannot be undone easily.`
+    );
+    if (!confirmed) return;
+
+    applyBtn.disabled = true;
+    applyBtn.textContent = 'Updating...';
+    showToast(`Updating ${affected.length} leads in ${city}...`, 'info');
+
+    try {
+        const leadIds = affected.map(l => l['Lead ID']);
+
+        // Build a shared log note for the region closure
+        const ts      = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true });
+        const logLine = `[SYS] Region bulk update: "${city}" → ${newStatus}`;
+
+        const res = await fetch('/api/bulk-update', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ leadIds, fields: { 'Lead Status': newStatus } })
+        });
+        if (!res.ok) {
+            const e = await res.json().catch(() => ({}));
+            throw new Error(e.error || `Bulk update failed: ${res.status}`);
+        }
+
+        // Update in-memory state + prepend log entry per lead
+        globalLeads.forEach(l => {
+            if (l._computedCity === city) {
+                l['Lead Status']    = newStatus;
+                l['Follow-Up Notes'] = _buildLogEntry(l, logLine);
+            }
+        });
+
+        // Persist the updated notes for each affected lead (fire-and-forget)
+        affected.forEach(l => {
+            fetch('/api/update', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ 'Lead ID': l['Lead ID'], 'Follow-Up Notes': l['Follow-Up Notes'] })
+            }).catch(() => {});
+        });
+
+        // Re-render
+        lastDataFingerprint = '';
+        applyFilters();
+
+        closeRegionActionModal();
+        showToast(`${affected.length} leads in "${city}" marked as "${newStatus}".`, 'success');
+
+    } catch (err) {
+        console.error('applyRegionAction error:', err);
+        showToast('Bulk update failed: ' + err.message, 'error');
+        applyBtn.disabled = false;
+        applyBtn.textContent = `Apply to All ${affected.length} Leads`;
+    }
+
+
 };

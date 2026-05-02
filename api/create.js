@@ -7,21 +7,20 @@ const supabase = createClient(
 
 module.exports = async function handler(req, res) {
   if (req.method === 'POST') {
-    const updated_lead = req.body;
+    const new_lead = req.body;
     
-    // Process the update based on Lead ID
+    // Insert new lead
     const { data, error } = await supabase
       .from('leads')
-      .update(updated_lead)
-      .eq('Lead ID', updated_lead['Lead ID']);
+      .insert([new_lead]);
       
     if (error) {
-      console.error("Supabase Update Error:", error);
+      console.error("Supabase Insert Error:", error);
       return res.status(500).json({ error: error.message, details: error.details, code: error.code });
     }
-    return res.status(200).json({ status: 'success' });
+    
+    return res.status(200).json({ status: 'success', data });
   } else {
-    res.setHeader('Allow', ['POST']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+    return res.status(405).json({ error: 'Method not allowed' });
   }
-}
+};
