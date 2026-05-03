@@ -112,7 +112,7 @@
                         <span class="btn-text">Export CSV</span>
                     </button>
                     <button id="newLeadBtn" class="btn-primary" onclick="openNewLeadModal()"
-                        title="Add a new lead manually" style="background: #7c3aed;">
+                        title="Add a new lead manually" style="background:var(--crm-accent);">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -165,7 +165,7 @@
                     </select>
                     <!-- Region bulk-action trigger -->
                     <button onclick="openRegionActionModal()" title="Bulk-update all leads in a region"
-                        style="height:40px; padding:0 12px; background:#7c3aed; color:#fff; border:none; border-radius:0; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; white-space:nowrap; flex-shrink:0;">
+                        style="height:40px; padding:0 12px; background:var(--crm-accent); color:var(--cds-text-on-color); border:none; border-radius:0; font-size:var(--cds-body-compact-01-size); font-weight:600; cursor:pointer; display:flex; align-items:center; gap:var(--cds-spacing-02); white-space:nowrap; flex-shrink:0;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                         Region Actions
                     </button>
@@ -254,16 +254,16 @@
                 </div>
 
                 <!-- ── Today's Schedule Panel ─────────────────────────────── -->
-                <div id="schedulePanelWrap" style="margin:12px 0 0; display:none;">
-                    <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:6px; overflow:hidden;">
-                        <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 16px; cursor:pointer; user-select:none;" onclick="_toggleSchedulePanel()">
-                            <span style="font-weight:700; font-size:14px; color:#6d28d9; display:flex; align-items:center; gap:8px;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                                Today's Follow-Ups <span id="schedulePanelCount" style="background:#7c3aed; color:#fff; border-radius:99px; padding:1px 8px; font-size:12px;">0</span>
+                <div id="schedulePanelWrap" style="margin:var(--cds-spacing-04) 0 0; display:none;">
+                    <div style="background:var(--cds-support-info-bg); border:1px solid var(--cds-border-interactive); border-radius:0; overflow:hidden;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; padding:var(--cds-spacing-03) var(--cds-spacing-05); cursor:pointer; user-select:none;" onclick="_toggleSchedulePanel()">
+                            <span style="font-weight:600; font-size:var(--cds-body-compact-01-size); color:var(--cds-interactive); display:flex; align-items:center; gap:var(--cds-spacing-03);">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                Today's Follow-Ups <span id="schedulePanelCount" style="background:var(--cds-interactive); color:var(--cds-text-on-color); border-radius:24px; padding:1px var(--cds-spacing-03); font-size:var(--cds-label-01-size);">0</span>
                             </span>
-                            <span id="schedulePanelChevron" style="color:#7c3aed; font-size:12px;">▼</span>
+                            <span id="schedulePanelChevron" style="color:var(--cds-interactive); font-size:12px;">&#9660;</span>
                         </div>
-                        <div id="schedulePanelBody" style="padding:0 16px 14px; display:flex; flex-direction:column; gap:8px;">
+                        <div id="schedulePanelBody" style="padding:0 var(--cds-spacing-05) var(--cds-spacing-04); display:flex; flex-direction:column; gap:var(--cds-spacing-02);">
                             <!-- filled by renderSchedulePanel() -->
                         </div>
                     </div>
@@ -279,16 +279,16 @@
                                 </div>
                                 <!-- Export CSV -->
                                 <button onclick="exportCSV()" title="Export current filtered view as CSV"
-                                    style="height:32px; padding:0 12px; background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; border-radius:4px; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:5px;">
+                                    class="btn-outline" style="height:var(--cds-input-height); padding:0 var(--cds-spacing-04); font-size:var(--cds-label-01-size); gap:var(--cds-spacing-02);">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                     Export CSV
                                 </button>
                             </div>
                         </div>
                         <!-- Bulk action bar — shown when ≥1 checkbox is ticked -->
-                        <div id="bulkActionBar" style="display:none; align-items:center; gap:10px; padding:8px 16px; background:#eff6ff; border-bottom:1px solid #bfdbfe; flex-wrap:wrap;">
-                            <span id="bulkCountLabel" style="font-size:13px; font-weight:600; color:#1d4ed8;">0 selected</span>
-                            <select id="bulkStatusSelect" class="modal-input" style="width:160px; margin-top:0; height:32px; font-size:13px;">
+                        <div id="bulkActionBar" style="display:none; align-items:center; gap:var(--cds-spacing-03); padding:var(--cds-spacing-03) var(--cds-spacing-05); background:var(--cds-support-info-bg); border-bottom:1px solid var(--cds-border-interactive); flex-wrap:wrap;">
+                            <span id="bulkCountLabel" style="font-size:var(--cds-body-compact-01-size); font-weight:600; color:var(--cds-interactive);">0 selected</span>
+                            <select id="bulkStatusSelect" class="modal-input" style="width:160px; margin-top:0; height:var(--cds-input-height); font-size:var(--cds-body-compact-01-size);">
                                 <option value="">Change status to...</option>
                                 <option value="New">New</option>
                                 <option value="Contacted">Contacted</option>
@@ -298,16 +298,16 @@
                                 <option value="Closed">Closed</option>
                                 <option value="Hold">Hold</option>
                             </select>
-                            <button onclick="bulkUpdateSelectedStatus()" style="height:32px; padding:0 14px; background:#2563eb; color:#fff; border:none; border-radius:4px; font-size:13px; font-weight:600; cursor:pointer;">Apply Status</button>
-                            <select id="bulkAssignSelect" class="modal-input" style="width:160px; margin-top:0; height:32px; font-size:13px;">
+                            <button onclick="bulkUpdateSelectedStatus()" class="btn-primary" style="height:var(--cds-input-height); padding:0 var(--cds-spacing-04); font-size:var(--cds-body-compact-01-size);">Apply Status</button>
+                            <select id="bulkAssignSelect" class="modal-input" style="width:160px; margin-top:0; height:var(--cds-input-height); font-size:var(--cds-body-compact-01-size);">
                                 <option value="">Assign to...</option>
                             </select>
-                            <button onclick="bulkAssignSelectedLeads()" style="height:32px; padding:0 14px; background:#4b5563; color:#fff; border:none; border-radius:4px; font-size:13px; font-weight:600; cursor:pointer;">Assign</button>
-                            <button id="deleteSelectedBtn" onclick="deleteSelectedLeads()" style="display:none; height:32px; padding:0 14px; background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; border-radius:4px; font-size:13px; font-weight:600; cursor:pointer; align-items:center; gap:6px;">
+                            <button onclick="bulkAssignSelectedLeads()" class="btn-outline" style="height:var(--cds-input-height); padding:0 var(--cds-spacing-04); font-size:var(--cds-body-compact-01-size);">Assign</button>
+                            <button id="deleteSelectedBtn" onclick="deleteSelectedLeads()" style="display:none; height:var(--cds-input-height); padding:0 var(--cds-spacing-04); background:var(--cds-support-error-bg); color:var(--cds-support-error); border:1px solid var(--cds-support-error); border-radius:0; font-size:var(--cds-body-compact-01-size); font-weight:600; cursor:pointer; align-items:center; gap:var(--cds-spacing-02);">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                 Delete (<span id="selectedCount">0</span>)
                             </button>
-                            <button onclick="clearSelection()" style="height:32px; padding:0 10px; background:none; border:1px solid #93c5fd; color:#1d4ed8; border-radius:4px; font-size:12px; cursor:pointer;">Clear</button>
+                            <button onclick="clearSelection()" class="btn-outline" style="height:var(--cds-input-height); padding:0 var(--cds-spacing-03); font-size:var(--cds-label-01-size);">Clear</button>
                         </div>
                         <div class="table-wrapper">
                             <table id="leadsTable">
@@ -489,7 +489,7 @@
                             <div
                                 style="display:flex; align-items:center; gap:16px; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid var(--border-color);">
                                 <div id="profileAvatar"
-                                    style="width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,#dbeafe,#e0e7ff); display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:700; color:var(--brand-primary); border:3px solid #bfdbfe; flex-shrink:0;">
+                                    style="width:64px; height:64px; border-radius:50%; background:var(--cds-layer-selected-01); display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:700; color:var(--brand-primary); border:3px solid var(--cds-border-interactive); flex-shrink:0;">
                                     ?</div>
                                 <div>
                                     <div id="profileNameDisplay"
@@ -498,7 +498,7 @@
                                     <div id="profileEmailDisplay"
                                         style="font-size:12.5px; color:var(--text-muted); margin-top:2px;"></div>
                                     <div id="profileRoleDisplay"
-                                        style="display:inline-flex; align-items:center; gap:5px; margin-top:6px; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600; background:#f3e8ff; color:#7e22ce;">
+                                        style="display:inline-flex; align-items:center; gap:5px; margin-top:6px; padding:2px 10px; border-radius:24px; font-size:11px; font-weight:600; background:var(--cds-tag-purple-bg); color:var(--cds-tag-purple-text);">
                                     </div>
                                 </div>
                             </div>
@@ -516,7 +516,7 @@
                                         Address</label>
                                     <input id="profileEmail" class="modal-input" placeholder="your@email.com"
                                         type="email" disabled
-                                        style="background:#f8fafc; color:var(--text-muted); cursor:not-allowed;" />
+                                        style="background:var(--cds-layer-02); color:var(--cds-text-disabled); cursor:not-allowed;" />
                                 </div>
                                 <div style="display:flex; flex-direction:column; gap:5px;">
                                     <label
@@ -534,14 +534,14 @@
                                     <label
                                         style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;">Role</label>
                                     <input id="profileRole" class="modal-input" disabled
-                                        style="background:#f8fafc; color:var(--text-muted); cursor:not-allowed;" />
+                                        style="background:var(--cds-layer-02); color:var(--cds-text-disabled); cursor:not-allowed;" />
                                 </div>
                                 <div style="display:flex; flex-direction:column; gap:5px;">
                                     <label
                                         style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;">Member
                                         Since</label>
                                     <input id="profileMemberSince" class="modal-input" disabled
-                                        style="background:#f8fafc; color:var(--text-muted); cursor:not-allowed;" />
+                                        style="background:var(--cds-layer-02); color:var(--cds-text-disabled); cursor:not-allowed;" />
                                 </div>
                             </div>
                             <div style="margin-top:18px; display:flex; justify-content:flex-end;">
@@ -680,9 +680,9 @@
                     </div>
 
                     <!-- Danger Zone -->
-                    <div class="card" style="overflow:hidden; border-color:#fee2e2;">
+                    <div class="card" style="overflow:hidden; border-color:var(--cds-support-error);">
                         <div
-                            style="padding:16px 20px; border-bottom:1px solid #fee2e2; display:flex; justify-content:space-between; align-items:center;">
+                            style="padding:16px 20px; border-bottom:1px solid var(--cds-support-error-bg); display:flex; justify-content:space-between; align-items:center;">
                             <div>
                                 <div style="font-size:14px; font-weight:600; color:var(--accent-red);">Account Actions
                                 </div>
@@ -705,7 +705,7 @@
                             </div>
                             <button class="btn-outline" onclick="handleLogout()"
                                 style="color:var(--accent-red); border-color:var(--accent-red); gap:8px;"
-                                onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background=''">
+                                onmouseover="this.style.background=\'var(--cds-support-error-bg)\' " onmouseout="this.style.background=''">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -779,7 +779,7 @@
                 <button type="button" class="btn-outline" onclick="closeNewLeadModal()"
                     ontouchstart="closeNewLeadModal()">Cancel</button>
                 <button type="button" class="btn-primary" id="saveNewLeadBtn" onclick="saveNewLead()"
-                    ontouchstart="saveNewLead()" style="background:#7c3aed;">Create Lead</button>
+                    ontouchstart="saveNewLead()" style="background:var(--crm-accent);">Create Lead</button>
             </div>
         </div>
     </div>
@@ -843,7 +843,7 @@
                 style="margin-top:22px; padding-bottom:6px; display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
                 <button type="button" class="btn-outline" onclick="closeDemoConfirmModal()">Cancel</button>
                 <button type="button" class="btn-outline" id="autoGenBtn" onclick="submitDemoGeneration(true)"
-                    style="border-color:#8b5cf6; color:#8b5cf6; font-weight:600;">
+                    style="border-color:var(--crm-accent); color:var(--crm-accent); font-weight:600;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
@@ -851,7 +851,7 @@
                     Auto Generate
                 </button>
                 <button type="button" class="btn-primary" id="customGenBtn" onclick="submitDemoGeneration(false)"
-                    style="background:#7c3aed;">
+                    style="background:var(--crm-accent);">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
@@ -872,7 +872,7 @@
             <span class="close-btn" onclick="closeRegionActionModal()">&times;</span>
             <div class="modal-header" style="margin-bottom:8px;">
                 <h2 style="display:flex;align-items:center;gap:8px;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--crm-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                     Region Bulk Action
                 </h2>
             </div>
@@ -899,13 +899,13 @@
             </div>
 
             <!-- Live count chip -->
-            <div id="regionLeadCount" style="margin-top:16px; padding:12px 16px; background:#f5f3ff; border-left:4px solid #7c3aed; border-radius:0; font-size:13px; font-weight:600; color:#5b21b6; display:none;">
+            <div id="regionLeadCount" style="margin-top:16px; padding:12px 16px; background:var(--cds-support-info-bg); border-left:4px solid var(--cds-interactive); border-radius:0; font-size:var(--cds-body-compact-01-size); font-weight:600; color:var(--cds-interactive); display:none;">
                 <!-- filled by JS -->
             </div>
 
             <div style="margin-top:22px; display:flex; justify-content:flex-end; gap:10px;">
                 <button type="button" class="btn-outline" onclick="closeRegionActionModal()">Cancel</button>
-                <button type="button" id="applyRegionActionBtn" class="btn-primary" onclick="applyRegionAction()" style="background:#7c3aed;" disabled>
+                <button type="button" id="applyRegionActionBtn" class="btn-primary" onclick="applyRegionAction()" style="background:var(--crm-accent);" disabled>
                     Apply to All Leads
                 </button>
             </div>

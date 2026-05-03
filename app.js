@@ -695,25 +695,25 @@ function renderTable() {
             const followUpMs = new Date(followUpDateStr).setHours(0, 0, 0, 0);
             const todayMs    = new Date().setHours(0, 0, 0, 0);
             if (followUpMs < todayMs) {
-                dueBadge = `<span style="margin-left:6px; padding:2px 6px; background:#fee2e2; color:#dc2626; border-radius:4px; font-size:10px; font-weight:700; vertical-align:middle; white-space:nowrap; display:inline-flex; align-items:center; gap:2px;"><i data-lucide="alarm-clock" class="icon-sm"></i> OVERDUE</span>`;
+                dueBadge = `<span style="margin-left:6px; padding:2px 6px; background:var(--cds-support-error-bg); color:var(--cds-support-error); border-radius:0; font-size:10px; font-weight:700; vertical-align:middle; white-space:nowrap; display:inline-flex; align-items:center; gap:2px;"><i data-lucide="alarm-clock" class="icon-sm"></i> OVERDUE</span>`;
             } else if (followUpMs === todayMs) {
-                dueBadge = `<span style="margin-left:6px; padding:2px 6px; background:#fef9c3; color:#92400e; border-radius:4px; font-size:10px; font-weight:700; vertical-align:middle; white-space:nowrap; display:inline-flex; align-items:center; gap:2px;"><i data-lucide="calendar" class="icon-sm"></i> TODAY</span>`;
+                dueBadge = `<span style="margin-left:6px; padding:2px 6px; background:var(--cds-tag-yellow-bg); color:var(--cds-tag-yellow-text); border-radius:0; font-size:10px; font-weight:700; vertical-align:middle; white-space:nowrap; display:inline-flex; align-items:center; gap:2px;"><i data-lucide="calendar" class="icon-sm"></i> TODAY</span>`;
             }
         }
         // ─────────────────────────────────────────────────────────────
 
         let actionsHtml = `<button class="btn-primary" onclick="viewLead('${lead['Lead ID']}')">Edit</button>`;
         if (lead['Demo Site URL']) {
-            actionsHtml += `<button class="btn-outline" onclick="window.open('${lead['Demo Site URL']}','_blank')" style="margin-left:8px; border-color:#8b5cf6; color:#8b5cf6; font-weight:600;" title="View live demo site">View Demo</button>`;
+            actionsHtml += `<button class="btn-outline" onclick="window.open('${lead['Demo Site URL']}','_blank')" style="margin-left:8px; border-color:var(--cds-interactive); color:var(--cds-interactive); font-weight:600;" title="View live demo site">View Demo</button>`;
             actionsHtml += `<button class="btn-send-demo" onclick="sendDemo('${lead['Lead ID']}')" style="margin-left:8px;" title="Send demo link via WhatsApp">Send Demo</button>`;
-            actionsHtml += `<button onclick="copyDemoMessages('${lead['Lead ID']}')" style="margin-left:8px; background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; border-radius:6px; padding:5px 10px; font-size:12px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:4px;" title="Copy both messages to clipboard"><i data-lucide="clipboard" class="icon-sm"></i> Copy Msgs</button>`;
+            actionsHtml += `<button onclick="copyDemoMessages('${lead['Lead ID']}')" style="margin-left:8px; background:var(--cds-layer-02); color:var(--cds-text-primary); border:1px solid var(--cds-border-strong-01); border-radius:0; padding:5px 10px; font-size:12px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:4px;" title="Copy both messages to clipboard"><i data-lucide="clipboard" class="icon-sm"></i> Copy Msgs</button>`;
         } else if (window._pendingDeployMap && window._pendingDeployMap[lead['Lead ID']]) {
-            actionsHtml += `<button onclick="deployLive('${lead['Lead ID']}', this)" style="margin-left:8px; background:#7c3aed; color:#fff; border:none; border-radius:6px; padding:5px 12px; font-size:12px; font-weight:700; cursor:pointer; animation: pulse 1.5s infinite; display:inline-flex; align-items:center; gap:4px;" title="Deploy the previewed site and save URL to database"><i data-lucide="rocket" class="icon-sm"></i> Deploy &amp; Save</button>`;
+            actionsHtml += `<button onclick="deployLive('${lead['Lead ID']}', this)" style="margin-left:8px; background:var(--crm-accent); color:var(--cds-text-on-color); border:none; border-radius:0; padding:5px 12px; font-size:12px; font-weight:700; cursor:pointer; animation: pulse 1.5s infinite; display:inline-flex; align-items:center; gap:4px;" title="Deploy the previewed site and save URL to database"><i data-lucide="rocket" class="icon-sm"></i> Deploy &amp; Save</button>`;
         } else if (lead['Lead Status'] === 'Demo Requested') {
             const isAdmin = window.currentUser?.role === 'super_admin';
             actionsHtml += isAdmin
-                ? `<button class="btn-outline" onclick="confirmDemoGeneration('${lead['Lead ID']}')" style="margin-left:8px; border-color:#8b5cf6; color:#8b5cf6; font-weight:600;" title="Customize and generate demo website">Generate Demo</button>`
-                : `<span style="margin-left:8px; padding:5px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:12px; color:#9ca3af; font-weight:500;">Awaiting Demo</span>`;
+                ? `<button class="btn-outline" onclick="confirmDemoGeneration('${lead['Lead ID']}')" style="margin-left:8px; border-color:var(--cds-interactive); color:var(--cds-interactive); font-weight:600;" title="Customize and generate demo website">Generate Demo</button>`
+                : `<span style="margin-left:8px; padding:0 var(--cds-spacing-04); border:1px solid var(--cds-border-subtle-01); border-radius:0; font-size:12px; color:var(--cds-text-disabled); font-weight:500;">Awaiting Demo</span>`;
         }
         if(lead.Phone && lead.Phone.trim().length >= 4) {
              let cleanPhone = lead.Phone.replace(/[^0-9+]/g, '');
@@ -1211,7 +1211,7 @@ function viewLead(id) {
                     <span style="font-size:12px; color:var(--text-muted); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${lead['Demo Site URL']}">${lead['Demo Site URL']}</span>
                     <button type="button" onclick="window.open('${lead['Demo Site URL']}','_blank')" style="background:#8b5cf6; color:#fff; border:none; border-radius:6px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer;">View Demo</button>
                     <button type="button" class="btn-send-demo" onclick="sendDemo('${lead['Lead ID']}')" style="padding:7px 14px; font-size:13px;">Send Demo</button>
-                    <button type="button" onclick="copyDemoMessages('${lead['Lead ID']}')" style="background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; border-radius:6px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;" title="Copy both messages to clipboard"><i data-lucide="clipboard" class="icon-sm"></i> Copy Msgs</button>
+                    <button type="button" onclick="copyDemoMessages('${lead['Lead ID']}')" style="background:var(--cds-layer-02); color:var(--cds-text-primary); border:1px solid var(--cds-border-strong-01); border-radius:0; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;" title="Copy both messages to clipboard"><i data-lucide="clipboard" class="icon-sm"></i> Copy Msgs</button>
                     ${window.currentUser?.role === 'super_admin'
                         ? `<button type="button" onclick="requestDemoSite('${lead['Lead ID']}', this, true)" style="background:#f3f4f6; color:#6b7280; border:1px solid #e5e7eb; border-radius:6px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer;" title="Regenerate the demo site">Regenerate</button>
                            <button type="button" onclick="deleteDemoSite('${lead['Lead ID']}', this)" style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; border-radius:6px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer;" title="Delete this demo site permanently">Delete Site</button>`
