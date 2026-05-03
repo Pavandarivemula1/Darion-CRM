@@ -465,7 +465,10 @@ function applyFilters() {
 
         // ── Default view: hide leads with no phone OR status = Not Interested ──
         if (!hasPhone(lead)) return false;
-        if ((lead['Lead Status'] || '').trim() === 'Not Interested' && currentStatusFilter === 'All') return false;
+        if ((lead['Lead Status'] || '').trim() === 'Not Interested' && currentStatusFilter === 'All') {
+            // Show Not Interested leads if explicitly filtering by Today's date
+            if (currentDateRange !== 'Today') return false;
+        }
 
         let matchSearch = true;
         if (currentSearch && currentSearch.trim() !== '') {
