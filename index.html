@@ -287,7 +287,11 @@
                                 <option value="Not Interested">Not Interested</option>
                                 <option value="Closed">Closed</option>
                             </select>
-                            <button onclick="bulkUpdateSelectedStatus()" style="height:32px; padding:0 14px; background:#2563eb; color:#fff; border:none; border-radius:4px; font-size:13px; font-weight:600; cursor:pointer;">Apply</button>
+                            <button onclick="bulkUpdateSelectedStatus()" style="height:32px; padding:0 14px; background:#2563eb; color:#fff; border:none; border-radius:4px; font-size:13px; font-weight:600; cursor:pointer;">Apply Status</button>
+                            <select id="bulkAssignSelect" class="modal-input" style="width:160px; margin-top:0; height:32px; font-size:13px;">
+                                <option value="">Assign to...</option>
+                            </select>
+                            <button onclick="bulkAssignSelectedLeads()" style="height:32px; padding:0 14px; background:#4b5563; color:#fff; border:none; border-radius:4px; font-size:13px; font-weight:600; cursor:pointer;">Assign</button>
                             <button id="deleteSelectedBtn" onclick="deleteSelectedLeads()" style="display:none; height:32px; padding:0 14px; background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; border-radius:4px; font-size:13px; font-weight:600; cursor:pointer; align-items:center; gap:6px;">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                 Delete (<span id="selectedCount">0</span>)

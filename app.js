@@ -429,12 +429,25 @@ function populateDynamicFilters(leads) {
         });
         // Append Unknown at the end
         if (userSet.has('Unknown User')) {
-            const opt = document.createElement('option');
-            opt.value = 'Unknown User';
-            opt.innerText = 'Unknown User';
-            if('Unknown User' === currentUserVal) opt.selected = true;
-            userSelect.appendChild(opt);
+            const uOpt = document.createElement('option');
+            uOpt.value = 'Unknown User';
+            uOpt.innerText = 'Legacy / System';
+            if('Unknown User' === currentUserVal) uOpt.selected = true;
+            userSelect.appendChild(uOpt);
         }
+    }
+
+    const bulkAssignSelect = document.getElementById('bulkAssignSelect');
+    if (bulkAssignSelect) {
+        bulkAssignSelect.innerHTML = '<option value="">Assign to...</option>';
+        const sortedUsers = Array.from(userSet).sort();
+        sortedUsers.forEach(u => {
+            if (u === 'Unknown User') return;
+            const opt = document.createElement('option');
+            opt.value = u;
+            opt.innerText = u;
+            bulkAssignSelect.appendChild(opt);
+        });
     }
 }
 
@@ -1104,6 +1117,35 @@ function viewLead(id) {
                 </select>
             </div>
         </div>
+        </div>
+        
+        <!-- ── Quick Outreach ─────────────────────────── -->
+        <div class="divider"></div>
+        <div style="margin-top:16px;">
+            <span class="label" style="display:block; margin-bottom:10px;">Quick Outreach (Zero-Cost Client-Side)</span>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <select id="whatsappTemplate" class="modal-input" style="width:160px; margin-bottom:0; min-height:34px;">
+                    <option value="welcome">Intro / Welcome</option>
+                    <option value="demo">Demo Follow-up</option>
+                    <option value="checkin">Check-in</option>
+                </select>
+                <button type="button" onclick="sendWhatsAppTemplate('${id}')" style="background:#22c55e; color:#fff; border:none; border-radius:6px; padding:0 14px; height:34px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg> WhatsApp
+                </button>
+                
+                <span style="border-left:1px solid var(--border-color); margin:0 4px; height:34px;"></span>
+
+                <select id="emailTemplate" class="modal-input" style="width:160px; margin-bottom:0; min-height:34px;">
+                    <option value="welcome">Intro / Welcome</option>
+                    <option value="demo">Demo Follow-up</option>
+                    <option value="checkin">Check-in</option>
+                </select>
+                <button type="button" onclick="sendEmailTemplate('${id}')" style="background:#3b82f6; color:#fff; border:none; border-radius:6px; padding:0 14px; height:34px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> Email
+                </button>
+            </div>
+        </div>
+
         <!-- ── Notes / Activity / Schedule Tabs ─────────────────────────── -->
         <div class="divider"></div>
         <div style="margin-top:4px;">
@@ -2840,4 +2882,114 @@ window.renderAnalytics = function() {
             });
         }
     }
+};
+
+window.bulkAssignSelectedLeads = async function() {
+    const assignTo = document.getElementById('bulkAssignSelect').value;
+    if (!assignTo) {
+        showToast('Please select a salesperson to assign.', 'warning');
+        return;
+    }
+
+    if (selectedLeadIds.size === 0) return;
+
+    const confirmed = confirm(`Assign ${selectedLeadIds.size} leads to ${assignTo}?`);
+    if (!confirmed) return;
+
+    const ids = Array.from(selectedLeadIds);
+    showToast(`Assigning ${ids.length} leads...`, 'info');
+
+    try {
+        const logLine = `[SYS] Assigned to ${assignTo}`;
+
+        const res = await fetch('/api/bulk-update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ leadIds: ids, fields: { 'Assigned Salesperson': assignTo } })
+        });
+
+        if (!res.ok) throw new Error('Failed to bulk assign leads.');
+
+        // Update in memory and logs
+        globalLeads.forEach(l => {
+            if (ids.includes(l['Lead ID'])) {
+                l['Assigned Salesperson'] = assignTo;
+                l['Follow-Up Notes'] = _buildLogEntry(l, logLine);
+            }
+        });
+
+        // Fire-and-forget logs
+        ids.forEach(id => {
+            const l = globalLeads.find(x => x['Lead ID'] === id);
+            if (l) {
+                fetch('/api/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 'Lead ID': id, 'Follow-Up Notes': l['Follow-Up Notes'] })
+                }).catch(() => {});
+            }
+        });
+
+        clearSelection();
+        applyFilters();
+        showToast(`${ids.length} leads assigned to ${assignTo}.`, 'success');
+        document.getElementById('bulkAssignSelect').value = '';
+
+    } catch (err) {
+        console.error('bulkAssign error:', err);
+        showToast(err.message, 'error');
+    }
+};
+
+window.sendWhatsAppTemplate = function(leadId) {
+    const lead = globalLeads.find(l => l['Lead ID'] === leadId);
+    if (!lead || !lead.Phone) {
+        showToast('This lead does not have a valid phone number.', 'warning');
+        return;
+    }
+
+    const template = document.getElementById('whatsappTemplate').value;
+    const name = lead.Name || 'there';
+    
+    let text = '';
+    if (template === 'welcome') {
+        text = `Hi ${name},\n\nI'm ${window.currentUser?.fullName || 'reaching out'} from Darion CRM. I'd love to connect and see how we can help your business grow. Do you have 5 minutes to chat?`;
+    } else if (template === 'demo') {
+        text = `Hi ${name},\n\nFollowing up on the demo we prepared for you! Have you had a chance to check it out? Let me know if you have any questions.\n\n${lead['Demo Site URL'] || ''}`;
+    } else if (template === 'checkin') {
+        text = `Hi ${name},\n\nJust checking in to see how things are going. Let me know if you need anything from our end!`;
+    }
+
+    // Clean phone number (remove spaces, plus, hyphens)
+    const phoneClean = lead.Phone.replace(/[^0-9]/g, '');
+    const url = `https://wa.me/${phoneClean}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+};
+
+window.sendEmailTemplate = function(leadId) {
+    const lead = globalLeads.find(l => l['Lead ID'] === leadId);
+    if (!lead || !lead.Email) {
+        showToast('This lead does not have a valid email address.', 'warning');
+        return;
+    }
+
+    const template = document.getElementById('emailTemplate').value;
+    const name = lead.Name || 'there';
+    
+    let subject = '';
+    let body = '';
+    
+    if (template === 'welcome') {
+        subject = `Introduction: Helping ${name} grow!`;
+        body = `Hi ${name},\n\nI'm ${window.currentUser?.fullName || 'reaching out'} from Darion CRM. I wanted to formally introduce myself and see how we can align our services to help your business reach the next level.\n\nWould you be open to a brief introductory call next week?\n\nBest regards,\n${window.currentUser?.fullName || 'Sales Team'}`;
+    } else if (template === 'demo') {
+        subject = `Your Custom Demo is Ready!`;
+        body = `Hi ${name},\n\nGreat news! The custom demo site we discussed is now ready for your review.\n\nYou can access it here: ${lead['Demo Site URL'] || '(Link Pending)'}\n\nPlease let me know your thoughts or if you'd like to schedule a walkthrough call.\n\nBest regards,\n${window.currentUser?.fullName || 'Sales Team'}`;
+    } else if (template === 'checkin') {
+        subject = `Checking in from Darion CRM`;
+        body = `Hi ${name},\n\nI hope you're having a great week.\n\nJust floating this to the top of your inbox to see if you had any updates on our previous conversation. Let me know if there's anything I can assist with!\n\nBest regards,\n${window.currentUser?.fullName || 'Sales Team'}`;
+    }
+
+    const url = `mailto:${lead.Email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(url, '_blank');
 };
