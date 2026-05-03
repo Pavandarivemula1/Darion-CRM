@@ -164,21 +164,6 @@ body {
     border: 1px solid var(--cds-border-subtle-01);
     border-radius: 0;
     box-shadow: var(--cds-shadow-sm);
-    transition: transform var(--cds-motion-moderate-01), box-shadow var(--cds-motion-moderate-01), border-color var(--cds-motion-fast-01);
-    will-change: transform, box-shadow;
-}
-
-/* Premium micro-animations for interactive cards */
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--cds-shadow-md);
-    border-color: var(--cds-border-interactive);
-}
-
-.card:active {
-    transform: scale(0.98);
-    box-shadow: var(--cds-shadow-sm);
-    border-color: var(--cds-interactive);
 }
 
 /* ── App Shell ────────────────────────────────────────────── */
@@ -1204,18 +1189,6 @@ tr:last-child td { border-bottom: none; }
         background: var(--cds-layer-01);
         width: 100%;
         box-sizing: border-box;
-        transition: transform var(--cds-motion-moderate-01), box-shadow var(--cds-motion-moderate-01), border-color var(--cds-motion-fast-01) !important;
-        will-change: transform, box-shadow;
-    }
-    .dashboard-stats .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--cds-shadow-md) !important;
-        border-color: var(--cds-border-interactive) !important;
-    }
-    .dashboard-stats .stat-card:active {
-        transform: scale(0.98);
-        box-shadow: var(--cds-shadow-sm) !important;
-        border-color: var(--cds-interactive) !important;
     }
     .stat-card h3 { font-size: var(--cds-label-01-size) !important; letter-spacing: 0.06em; }
     .stat-card .value { font-size: 28px !important; font-weight: 300 !important; }
@@ -1255,16 +1228,6 @@ tr:last-child td { border-bottom: none; }
         box-sizing: border-box;
         position: relative;
         border-left-width: 4px !important;
-        transition: transform var(--cds-motion-moderate-01), box-shadow var(--cds-motion-moderate-01) !important;
-        will-change: transform, box-shadow;
-    }
-    #leadsTable tr:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--cds-shadow-md);
-    }
-    #leadsTable tr:active {
-        transform: scale(0.98);
-        box-shadow: var(--cds-shadow-sm);
     }
     /* Priority color left border on cards — Carbon semantic tokens */
     #leadsTable tr[data-priority="High"]   { border-left-color: var(--cds-support-error)   !important; }
@@ -1410,22 +1373,6 @@ tr:last-child td { border-bottom: none; }
         padding: var(--cds-spacing-04) var(--cds-spacing-05);
         cursor: pointer;
         border-left: 4px solid var(--cds-interactive);
-        transition: transform var(--cds-motion-moderate-01), box-shadow var(--cds-motion-moderate-01), background var(--cds-motion-fast-02);
-        will-change: transform, box-shadow;
-    }
-    .cal-agenda-task:hover {
-        background: var(--cds-layer-hover-01);
-        transform: translateY(-2px);
-        box-shadow: var(--cds-shadow-md);
-        border-color: var(--cds-border-interactive);
-        position: relative;
-        z-index: 2;
-    }
-    .cal-agenda-task:active {
-        transform: scale(0.98);
-        box-shadow: var(--cds-shadow-sm);
-        background: var(--cds-layer-hover-01);
-        border-color: var(--cds-interactive);
     }
     .cal-agenda-task.high { border-left-color: var(--cds-support-error); }
     .cal-agenda-task-name { font-weight: 600; font-size: var(--cds-body-compact-01-size); flex: 1; }
@@ -1607,17 +1554,6 @@ tr:last-child td { border-bottom: none; }
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: transform var(--cds-motion-moderate-01), box-shadow var(--cds-motion-moderate-01), background var(--cds-motion-fast-02);
-    will-change: transform, box-shadow;
-}
-.calendar-task:hover {
-    background: var(--cds-layer-hover-01);
-    transform: translateY(-2px);
-    box-shadow: var(--cds-shadow-md);
-}
-.calendar-task:active {
-    transform: scale(0.96);
-    box-shadow: var(--cds-shadow-sm);
 }
 .calendar-task.high-priority {
     border-left-color: var(--cds-support-error);
