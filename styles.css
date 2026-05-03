@@ -1215,14 +1215,14 @@ tr:last-child td { border-bottom: none; }
     #leadsTable thead { display: none; }
     #leadsTable tr {
         display: grid;
-        grid-template-columns: 24px 1fr;
-        row-gap: var(--cds-spacing-03);
-        column-gap: var(--cds-spacing-04);
+        grid-template-columns: auto 1fr;
+        grid-template-rows: repeat(6, auto);
+        gap: var(--cds-spacing-03) var(--cds-spacing-04);
         background: var(--cds-layer-01);
         border: 1px solid var(--cds-border-subtle-01);
         border-radius: 0;
         box-shadow: var(--cds-shadow-sm);
-        margin-bottom: var(--cds-spacing-05);
+        margin-bottom: var(--cds-spacing-04);
         padding: var(--cds-spacing-05);
         width: 100%;
         box-sizing: border-box;
@@ -1236,69 +1236,29 @@ tr:last-child td { border-bottom: none; }
     
     #leadsTable td {
         display: flex; align-items: center;
-        padding: 0; border: none;
-        font-size: var(--cds-body-compact-01-size);
+        padding: 0; border: none; font-size: var(--cds-body-compact-01-size);
         width: 100%;
     }
-    
-    /* 1. Checkbox */
-    #leadsTable td:nth-child(1) { grid-column: 1 / 2; grid-row: 1 / 2; align-self: start; padding-top: 2px; }
-    
-    /* 2. Name */
-    #leadsTable td:nth-child(2) { grid-column: 2 / 3; grid-row: 1 / 2; align-self: start; }
-    #leadsTable td:nth-child(2) strong { font-size: 16px; font-weight: 600; color: var(--cds-text-primary) !important; letter-spacing: 0.02em; }
-    
-    /* 3 & 4. Contact Info (Email / Phone) */
-    #leadsTable td:nth-child(3) { grid-column: 2 / 3; grid-row: 2 / 3; font-size: var(--cds-label-01-size); color: var(--cds-text-secondary); gap: var(--cds-spacing-03); }
-    #leadsTable td:nth-child(4) { grid-column: 2 / 3; grid-row: 3 / 4; font-size: var(--cds-label-01-size); color: var(--cds-text-secondary); gap: var(--cds-spacing-03); }
-    
-    /* 5. Badges */
-    #leadsTable td:nth-child(5) { grid-column: 2 / 3; grid-row: 4 / 5; flex-wrap: wrap; }
-    
-    /* 6. Status Dropdown (Full Width, Very Friendly) */
-    #leadsTable td:nth-child(6) { 
-        grid-column: 1 / 3; 
-        grid-row: 5 / 6; 
-        margin-top: var(--cds-spacing-03); 
-    }
-    #leadsTable td:nth-child(6) .inline-select { 
-        width: 100%; 
-        height: 40px; 
-        padding: 0 var(--cds-spacing-04); 
-        border-radius: 0; 
-        background: var(--cds-layer-02); 
-        border: 1px solid var(--cds-border-strong-01);
-        font-size: var(--cds-body-compact-01-size);
-        font-weight: 600;
-        color: var(--cds-text-primary);
-    }
-    
-    /* 7. Action Buttons (Full Width Footer, Auto-Wrapping Grid) */
-    #leadsTable td:nth-child(7) { 
-        grid-column: 1 / 3; 
-        grid-row: 6 / 7; 
-        display: grid; 
-        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-        gap: var(--cds-spacing-03); 
-        margin-top: var(--cds-spacing-02); 
-    }
+    #leadsTable td:nth-child(1) { grid-area: 1 / 1 / 2 / 2; align-self: center; }
+    #leadsTable td:nth-child(2) { grid-area: 1 / 2 / 2 / 3; }
+    #leadsTable td:nth-child(3) { grid-area: 2 / 1 / 3 / 3; color: var(--cds-text-secondary); font-size: var(--cds-label-01-size); gap: var(--cds-spacing-03); }
+    #leadsTable td:nth-child(4) { grid-area: 3 / 1 / 4 / 3; color: var(--cds-text-secondary); font-size: var(--cds-label-01-size); gap: var(--cds-spacing-03); }
+    #leadsTable td:nth-child(5) { grid-area: 4 / 1 / 5 / 3; padding-top: var(--cds-spacing-01); }
+    #leadsTable td:nth-child(6) { grid-area: 5 / 1 / 6 / 3; }
+    #leadsTable td:nth-child(6) .inline-select { width: 100%; font-size: var(--cds-body-compact-01-size); padding: 0 var(--cds-spacing-03); height: 40px; border-radius: 0; background: var(--cds-layer-02); border: 1px solid var(--cds-border-strong-01); }
+    #leadsTable td:nth-child(7) { grid-area: 6 / 1 / 7 / 3; margin-top: var(--cds-spacing-03); display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: var(--cds-spacing-03); }
+    #leadsTable td:nth-child(2) strong { font-size: var(--cds-heading-compact-01-size); font-weight: 600; color: var(--cds-text-primary) !important; }
     #leadsTable td:nth-child(7) button,
     #leadsTable td:nth-child(7) a {
-        width: 100%;
-        height: 40px;
-        display: inline-flex;
-        align-items: center;
+        width: 100%; height: 40px; margin: 0 !important;
+        font-weight: 600; font-size: var(--cds-label-01-size);
         justify-content: center;
         background: var(--cds-layer-02);
         border: 1px solid var(--cds-border-subtle-01);
         border-radius: 0;
-        font-size: var(--cds-label-01-size);
-        font-weight: 600;
         color: var(--cds-text-primary);
-        margin: 0 !important;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        display: inline-flex; align-items: center;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
     /* Modals — Carbon Modal (full-width on mobile, no radius, no drag handle) */
