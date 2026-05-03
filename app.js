@@ -262,13 +262,14 @@ function initNavigation() {
         e.preventDefault();
         showView('dashboard');
         dBtn.classList.add('active');
+        applyFilters();
     });
 
     pBtn.addEventListener('click', (e) => {
         e.preventDefault();
         showView('pipeline');
         pBtn.classList.add('active');
-        renderPipeline();
+        applyFilters();
     });
 
     if (prBtn) {
@@ -466,8 +467,9 @@ function applyFilters() {
         // ── Default view: hide leads with no phone OR status = Not Interested ──
         if (!hasPhone(lead)) return false;
         if ((lead['Lead Status'] || '').trim() === 'Not Interested' && currentStatusFilter === 'All') {
-            // Show Not Interested leads if explicitly filtering by Today's date
-            if (currentDateRange !== 'Today') return false;
+            // Show Not Interested leads if explicitly filtering by Today's date, or if in Pipeline view
+            const isPipeline = document.getElementById('pipelineView') && document.getElementById('pipelineView').style.display !== 'none';
+            if (!isPipeline && currentDateRange !== 'Today') return false;
         }
 
         let matchSearch = true;
