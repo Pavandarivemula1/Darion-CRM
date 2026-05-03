@@ -243,24 +243,30 @@ document.addEventListener('DOMContentLoaded', () => {
 function initNavigation() {
     const dBtn = document.getElementById('navDashboardBtn');
     const pBtn = document.getElementById('navPipelineBtn');
+    const aBtn = document.getElementById('navAnalyticsBtn');
     const prBtn = document.getElementById('navProfileBtn');
     if(!dBtn || !pBtn) return;
 
     function showView(view) {
         document.getElementById('dashboardView').style.display = view === 'dashboard' ? 'block' : 'none';
         document.getElementById('pipelineView').style.display  = view === 'pipeline'  ? 'flex'  : 'none';
+        
+        const analyticsView = document.getElementById('analyticsView');
+        if (analyticsView) analyticsView.style.display = view === 'analytics' ? 'block' : 'none';
+        
         document.getElementById('profileView').style.display   = view === 'profile'   ? 'block' : 'none';
-        // Header visibility: hide filters + actions in profile view
+        
+        // Header visibility: hide filters + actions in profile and analytics view
         const header = document.querySelector('header');
         const filters = document.getElementById('globalFilters');
-        if (view === 'profile') {
+        if (view === 'profile' || view === 'analytics') {
             if (header)  header.style.display  = 'none';
             if (filters) filters.style.display = 'none';
         } else {
             if (header)  header.style.display  = '';
             if (filters) filters.style.display = '';
         }
-        [dBtn, pBtn, prBtn].forEach(b => b && b.classList.remove('active'));
+        [dBtn, pBtn, aBtn, prBtn].forEach(b => b && b.classList.remove('active'));
     }
 
     dBtn.addEventListener('click', (e) => {
@@ -276,6 +282,15 @@ function initNavigation() {
         pBtn.classList.add('active');
         applyFilters();
     });
+
+    if (aBtn) {
+        aBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            showView('analytics');
+            aBtn.classList.add('active');
+            if (typeof renderAnalytics === 'function') renderAnalytics();
+        });
+    }
 
     if (prBtn) {
         prBtn.addEventListener('click', (e) => {
@@ -340,6 +355,7 @@ function loadData(isSilentPolling = false) {
         populateDynamicFilters(globalLeads); 
         applyFilters(); 
         renderPipeline(); 
+        if (typeof renderAnalytics === 'function') renderAnalytics();
         if (typeof renderSchedulePanel === 'function') renderSchedulePanel();
     })
     .catch(err => {
@@ -2695,5 +2711,133 @@ window.applyRegionAction = async function() {
         applyBtn.textContent = `Apply to All ${affected.length} Leads`;
     }
 
+};
 
+// ============================================================
+// ANALYTICS
+// ============================================================
+let leadsTimelineChartInstance = null;
+
+window.renderAnalytics = function() {
+    const analyticsView = document.getElementById('analyticsView');
+    if (!analyticsView || analyticsView.style.display === 'none') return;
+
+    const leads = globalLeads;
+
+    let totalLeads = leads.length;
+    let activeLeads = 0;
+    let dealsClosed = 0;
+
+    const salespersonCounts = {};
+    const timelineCounts = {}; // YYYY-MM-DD -> count
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setHours(0,0,0,0);
+
+    leads.forEach(l => {
+        const status = (l['Lead Status'] || '').trim();
+        if (status !== 'Closed' && status !== 'Not Interested' && status !== 'Duplicate') {
+            activeLeads++;
+        }
+        if (status === 'Closed') {
+            dealsClosed++;
+            const creator = _getLeadCreator(l);
+            salespersonCounts[creator] = (salespersonCounts[creator] || 0) + 1;
+        }
+
+        const createDateObj = _getLeadCreationDate(l); // returns Date object
+        if (createDateObj) {
+            if (createDateObj >= thirtyDaysAgo) {
+                const createDateStr = new Date(createDateObj.getTime() - (createDateObj.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                timelineCounts[createDateStr] = (timelineCounts[createDateStr] || 0) + 1;
+            }
+        }
+    });
+
+    const conversionRate = totalLeads > 0 ? ((dealsClosed / totalLeads) * 100).toFixed(1) : '0.0';
+
+    // Update DOM
+    document.getElementById('metricTotalLeads').textContent = totalLeads;
+    document.getElementById('metricActiveLeads').textContent = activeLeads;
+    document.getElementById('metricDealsClosed').textContent = dealsClosed;
+    document.getElementById('metricConversion').textContent = conversionRate + '%';
+
+    // Render Timeline Chart
+    const timelineLabels = [];
+    const timelineData = [];
+    // Generate last 30 days array to ensure 0s are filled
+    for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+        timelineLabels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        timelineData.push(timelineCounts[dateStr] || 0);
+    }
+
+    const canvasEl = document.getElementById('leadsTimelineChart');
+    if (canvasEl) {
+        const ctx = canvasEl.getContext('2d');
+        if (leadsTimelineChartInstance) leadsTimelineChartInstance.destroy();
+
+        leadsTimelineChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: timelineLabels,
+                datasets: [{
+                    label: 'New Leads',
+                    data: timelineData,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    pointBackgroundColor: '#2563eb',
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // Render Leaderboard
+    const lbContainer = document.getElementById('leaderboardContainer');
+    if (lbContainer) {
+        lbContainer.innerHTML = '';
+        const sortedSales = Object.entries(salespersonCounts).sort((a,b) => b[1] - a[1]);
+        if (sortedSales.length === 0) {
+            lbContainer.innerHTML = '<div style="color:var(--text-muted); font-size:13px; text-align:center; padding:20px;">No closed deals yet.</div>';
+        } else {
+            const maxDeals = sortedSales[0][1];
+            sortedSales.forEach(([name, count], index) => {
+                if (name === 'Unknown User') name = 'Legacy / System';
+                const percent = (count / maxDeals) * 100;
+                
+                let rankBadge = '';
+                if (index === 0) rankBadge = '<span style="background:#fef08a; color:#854d0e; padding:2px 6px; border-radius:12px; font-size:10px; font-weight:700;">#1</span>';
+                else if (index === 1) rankBadge = '<span style="background:#e5e7eb; color:#374151; padding:2px 6px; border-radius:12px; font-size:10px; font-weight:700;">#2</span>';
+                else if (index === 2) rankBadge = '<span style="background:#fed7aa; color:#9a3412; padding:2px 6px; border-radius:12px; font-size:10px; font-weight:700;">#3</span>';
+
+                lbContainer.innerHTML += `
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <div style="display:flex; justify-content:space-between; font-size:13px;">
+                            <span style="font-weight:600; color:var(--text-main); display:flex; align-items:center; gap:6px;">${name} ${rankBadge}</span>
+                            <span style="font-weight:700; color:var(--brand-primary);">${count} deals</span>
+                        </div>
+                        <div style="height:6px; background:var(--border-color); border-radius:3px; overflow:hidden;">
+                            <div style="height:100%; width:${percent}%; background:var(--brand-primary); border-radius:3px;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    }
 };

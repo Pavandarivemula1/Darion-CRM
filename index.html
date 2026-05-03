@@ -46,6 +46,14 @@
                     </svg>
                     Lead Pipeline
                 </a>
+                <a href="#" id="navAnalyticsBtn">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Analytics
+                </a>
                 <a href="#" id="navProfileBtn">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -347,6 +355,52 @@
                 <div id="pipelineFunnel"></div>
                 <div class="kanban-board" id="kanbanBoard">
                     <!-- Columns injected by JS -->
+                </div>
+            </div>
+
+            <!-- Analytics View -->
+            <div id="analyticsView" style="display:none; flex:1; overflow-y:auto; padding:24px;">
+                <div style="max-width:1100px; margin:0 auto; padding-bottom:100px;">
+                    <div style="margin-bottom:24px;">
+                        <h1 style="font-size:24px; font-weight:700; color:var(--text-main); margin-bottom:8px;">Analytics</h1>
+                        <p style="color:var(--text-muted); font-size:14px;">Monitor your pipeline performance and team metrics.</p>
+                    </div>
+
+                    <!-- Key Metrics -->
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:20px; margin-bottom:30px;">
+                        <div class="card" style="padding:20px;">
+                            <div style="font-size:12.5px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">Total Leads</div>
+                            <div id="metricTotalLeads" style="font-size:32px; font-weight:700; color:var(--text-main); margin-top:10px;">0</div>
+                        </div>
+                        <div class="card" style="padding:20px;">
+                            <div style="font-size:12.5px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">Active Leads</div>
+                            <div id="metricActiveLeads" style="font-size:32px; font-weight:700; color:var(--brand-primary); margin-top:10px;">0</div>
+                        </div>
+                        <div class="card" style="padding:20px;">
+                            <div style="font-size:12.5px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">Deals Closed</div>
+                            <div id="metricDealsClosed" style="font-size:32px; font-weight:700; color:var(--accent-green); margin-top:10px;">0</div>
+                        </div>
+                        <div class="card" style="padding:20px;">
+                            <div style="font-size:12.5px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">Conversion Rate</div>
+                            <div id="metricConversion" style="font-size:32px; font-weight:700; color:var(--accent-orange); margin-top:10px;">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div style="display:grid; grid-template-columns:2fr 1fr; gap:20px;">
+                        <div class="card" style="padding:20px;">
+                            <div style="font-size:14px; font-weight:600; color:var(--text-main); margin-bottom:15px;">Leads Over Time (Last 30 Days)</div>
+                            <div style="position:relative; height:300px; width:100%;">
+                                <canvas id="leadsTimelineChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="card" style="padding:20px;">
+                            <div style="font-size:14px; font-weight:600; color:var(--text-main); margin-bottom:15px;">Salesperson Leaderboard</div>
+                            <div id="leaderboardContainer" style="display:flex; flex-direction:column; gap:12px;">
+                                <div style="color:var(--text-muted); font-size:13px; text-align:center; padding:20px;">Loading data...</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
