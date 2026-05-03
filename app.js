@@ -358,7 +358,16 @@ function populateDynamicFilters(leads) {
         if (creator) {
             userSet.add(creator);
         }
+        if (l['Assigned Salesperson']) {
+            userSet.add(l['Assigned Salesperson'].trim());
+        }
     });
+
+    if (window.currentUser && window.currentUser.fullName) {
+        userSet.add(window.currentUser.fullName);
+    } else if (window.currentUser && window.currentUser.email) {
+        userSet.add(window.currentUser.email.split('@')[0]);
+    }
 
     const select = document.getElementById('filterCity');
     if(select) {
