@@ -7,6 +7,7 @@ const BACKEND_URL = 'https://template-auto-production.up.railway.app';
 // HAPTIC FEEDBACK (Vibration API + Ripple)
 // ============================================================
 function haptic(el, pattern = [8], clientX, clientY) {
+    if (localStorage.getItem('darion_haptics') === 'disabled') return;
     if (navigator.vibrate) navigator.vibrate(pattern);
     if (!el) return;
     const ripple = document.createElement('span');
@@ -187,6 +188,10 @@ window.openGoogleSearch = function(query) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Apply preferences on load
+    const themePref = localStorage.getItem('darion_theme') || 'system';
+    if (themePref === 'dark') document.body.classList.add('dark-mode');
+
     // Attach haptics globally — pointerdown fires instantly on mobile (no 300ms click delay)
     document.addEventListener('pointerdown', (e) => {
         const btn = e.target.closest('button, a.btn-primary, a.btn-success, a.btn-outline, .btn-icon, .tmpl-card');
@@ -279,6 +284,16 @@ function initNavigation() {
             prBtn.classList.add('active');
             loadProfileView();
         });
+    }
+
+    // Auto-load default view if none selected
+    const defaultView = localStorage.getItem('darion_defaultView') || 'dashboard';
+    if (defaultView === 'pipeline') {
+        showView('pipeline');
+        pBtn.classList.add('active');
+    } else {
+        showView('dashboard');
+        dBtn.classList.add('active');
     }
 }
 
@@ -2362,15 +2377,29 @@ function loadProfileView() {
         roleDisplay.style.color      = user.role === 'super_admin' ? '#7e22ce' : '#0369a1';
     }
 
-    // Fill editable field
+    // Fill editable fields
     const fullNameInput = document.getElementById('profileFullName');
+    const phoneInput    = document.getElementById('profilePhone');
+    const jobTitleInput = document.getElementById('profileJobTitle');
     const emailInput    = document.getElementById('profileEmail');
     const roleInput     = document.getElementById('profileRole');
     const sinceInput    = document.getElementById('profileMemberSince');
 
     if (fullNameInput) fullNameInput.value = user.fullName || '';
+    if (phoneInput)    phoneInput.value    = localStorage.getItem('profile_phone_' + user.id) || '';
+    if (jobTitleInput) jobTitleInput.value = localStorage.getItem('profile_jobTitle_' + user.id) || '';
     if (emailInput)    emailInput.value    = user.email    || '';
     if (roleInput)     roleInput.value     = user.role === 'super_admin' ? 'Super Admin' : 'Sales Manager';
+
+    // Load App Preferences
+    const prefTheme = document.getElementById('prefTheme');
+    const prefDefaultView = document.getElementById('prefDefaultView');
+    const prefHaptics = document.getElementById('prefHaptics');
+
+    if (prefTheme) prefTheme.value = localStorage.getItem('darion_theme') || 'system';
+    if (prefDefaultView) prefDefaultView.value = localStorage.getItem('darion_defaultView') || 'dashboard';
+    if (prefHaptics) prefHaptics.value = localStorage.getItem('darion_haptics') || 'enabled';
+
 
     // Fetch member since from Supabase auth metadata
     _sb.auth.getUser().then(({ data }) => {
@@ -2426,6 +2455,8 @@ function _passStrengthHandler(e) {
 window.saveProfileInfo = async function() {
     const btn  = document.getElementById('saveProfileBtn');
     const name = (document.getElementById('profileFullName').value || '').trim();
+    const phone = (document.getElementById('profilePhone').value || '').trim();
+    const jobTitle = (document.getElementById('profileJobTitle').value || '').trim();
     if (!name) { showToast('Full name is required.', 'warning'); return; }
 
     const origHtml = btn.innerHTML;
@@ -2442,6 +2473,8 @@ window.saveProfileInfo = async function() {
 
         // Update local cache & header chip
         window.currentUser.fullName = name;
+        localStorage.setItem('profile_phone_' + window.currentUser.id, phone);
+        localStorage.setItem('profile_jobTitle_' + window.currentUser.id, jobTitle);
         const disp = document.getElementById('userDisplayName');
         const av   = document.getElementById('userAvatar');
         const pnm  = document.getElementById('profileNameDisplay');
@@ -2457,6 +2490,31 @@ window.saveProfileInfo = async function() {
         btn.disabled  = false;
         btn.innerHTML = origHtml;
     }
+};
+
+window.savePreferences = function() {
+    const prefTheme = document.getElementById('prefTheme');
+    const prefDefaultView = document.getElementById('prefDefaultView');
+    const prefHaptics = document.getElementById('prefHaptics');
+
+    if (prefTheme) {
+        localStorage.setItem('darion_theme', prefTheme.value);
+        if (prefTheme.value === 'dark') {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
+    }
+    if (prefDefaultView) {
+        localStorage.setItem('darion_defaultView', prefDefaultView.value);
+    }
+    if (prefHaptics) {
+        localStorage.setItem('darion_haptics', prefHaptics.value);
+        if (prefHaptics.value === 'enabled') {
+            triggerHaptic('success');
+        }
+    }
+    showToast('Preferences saved.', 'success');
 };
 
 window.changePassword = async function() {

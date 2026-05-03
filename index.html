@@ -414,6 +414,18 @@
                                 </div>
                                 <div style="display:flex; flex-direction:column; gap:5px;">
                                     <label
+                                        style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;">Phone
+                                        Number</label>
+                                    <input id="profilePhone" class="modal-input" placeholder="+91 9876543210" />
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:5px;">
+                                    <label
+                                        style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;">Job
+                                        Title</label>
+                                    <input id="profileJobTitle" class="modal-input" placeholder="e.g. Sales Executive" />
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:5px;">
+                                    <label
                                         style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;">Role</label>
                                     <input id="profileRole" class="modal-input" disabled
                                         style="background:#f8fafc; color:var(--text-muted); cursor:not-allowed;" />
@@ -438,6 +450,47 @@
                                     </svg>
                                     Save Changes
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- App Preferences Card -->
+                    <div class="card" style="overflow:hidden;">
+                        <div
+                            style="padding:16px 20px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <div style="font-size:14px; font-weight:600; color:var(--text-main);">App Preferences</div>
+                                <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Customize your CRM experience.</div>
+                            </div>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                        </div>
+                        <div style="padding:20px;">
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                                <div style="display:flex; flex-direction:column; gap:5px;">
+                                    <label style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;">Theme</label>
+                                    <select id="prefTheme" class="modal-input" onchange="savePreferences()">
+                                        <option value="system">System Default</option>
+                                        <option value="light">Light Mode</option>
+                                        <option value="dark">Dark Mode</option>
+                                    </select>
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:5px;">
+                                    <label style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;">Default View</label>
+                                    <select id="prefDefaultView" class="modal-input" onchange="savePreferences()">
+                                        <option value="dashboard">Dashboard</option>
+                                        <option value="pipeline">Lead Pipeline</option>
+                                    </select>
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:5px;">
+                                    <label style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;">Haptic Feedback</label>
+                                    <select id="prefHaptics" class="modal-input" onchange="savePreferences()">
+                                        <option value="enabled">Enabled</option>
+                                        <option value="disabled">Disabled</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
