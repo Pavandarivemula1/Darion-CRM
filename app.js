@@ -369,6 +369,34 @@ function populateCityFilter(leads) {
     });
 }
 
+window.toggleCustomDateInputs = function() {
+    const filter = document.getElementById('filterDateRange');
+    const wrap = document.getElementById('customDateWrap');
+    if (filter && wrap) {
+        wrap.style.display = filter.value === 'Custom' ? 'flex' : 'none';
+    }
+};
+
+function _getLeadCreationDate(lead) {
+    const notes = lead['Follow-Up Notes'] || '';
+    const entries = notes.split('\n---\n').map(e => e.trim()).filter(Boolean);
+    if (entries.length > 0) {
+        // The last entry in the array is the oldest log entry
+        const oldest = entries[entries.length - 1];
+        const tsMatch = oldest.match(/^\[([^\]]+)\]/);
+        if (tsMatch) {
+            // ts string looks like "03/05/2026, 10:20 am"
+            const datePart = tsMatch[1].split(',')[0].trim();
+            const parts = datePart.split('/'); // DD/MM/YYYY
+            if (parts.length === 3) {
+                // Return a Date object at 00:00:00 local time
+                return new Date(parts[2], parseInt(parts[1], 10) - 1, parts[0]);
+            }
+        }
+    }
+    return null;
+}
+
 function applyFilters() {
     const citySelect     = document.getElementById('filterCity');
     const statusSelect   = document.getElementById('filterStatus');
@@ -379,6 +407,12 @@ function applyFilters() {
     currentStatusFilter   = statusSelect   ? statusSelect.value   : 'All';
     currentPriorityFilter = prioritySelect ? prioritySelect.value : 'All';
     currentServiceFilter  = serviceSelect  ? serviceSelect.value  : 'All';
+
+    // Date Filters
+    const dateRangeSelect = document.getElementById('filterDateRange');
+    const currentDateRange = dateRangeSelect ? dateRangeSelect.value : 'All';
+    const customStart      = document.getElementById('filterStartDate') ? document.getElementById('filterStartDate').value : '';
+    const customEnd        = document.getElementById('filterEndDate') ? document.getElementById('filterEndDate').value : '';
 
     // Helper: does this lead have any phone number?
     const hasPhone = lead => !!(lead.Phone && lead.Phone.trim());
@@ -419,7 +453,48 @@ function applyFilters() {
             matchService = (lead['Has WhatsApp'] === 'True' || lead['Has WhatsApp'] === 'true');
         }
 
-        return matchSearch && matchCity && matchStatus && matchPriority && matchService;
+        let matchDate = true;
+        if (currentDateRange !== 'All') {
+            const creationDate = _getLeadCreationDate(lead);
+            if (!creationDate) {
+                matchDate = false; // Cannot filter by date if unknown
+            } else {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                
+                if (currentDateRange === 'Today') {
+                    matchDate = (creationDate.getTime() === today.getTime());
+                } else if (currentDateRange === 'Yesterday') {
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    matchDate = (creationDate.getTime() === yesterday.getTime());
+                } else if (currentDateRange === 'Last 7 Days') {
+                    const sevenDaysAgo = new Date(today);
+                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                    matchDate = (creationDate.getTime() >= sevenDaysAgo.getTime() && creationDate.getTime() <= today.getTime());
+                } else if (currentDateRange === 'Last 30 Days') {
+                    const thirtyDaysAgo = new Date(today);
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    matchDate = (creationDate.getTime() >= thirtyDaysAgo.getTime() && creationDate.getTime() <= today.getTime());
+                } else if (currentDateRange === 'Custom') {
+                    let dMatchStart = true;
+                    let dMatchEnd = true;
+                    if (customStart) {
+                        const sDate = new Date(customStart);
+                        sDate.setHours(0,0,0,0);
+                        dMatchStart = (creationDate.getTime() >= sDate.getTime());
+                    }
+                    if (customEnd) {
+                        const eDate = new Date(customEnd);
+                        eDate.setHours(0,0,0,0);
+                        dMatchEnd = (creationDate.getTime() <= eDate.getTime());
+                    }
+                    matchDate = dMatchStart && dMatchEnd;
+                }
+            }
+        }
+
+        return matchSearch && matchCity && matchStatus && matchPriority && matchService && matchDate;
     });
 
     const maxPage = Math.ceil(visuallyFilteredLeads.length / itemsPerPage);

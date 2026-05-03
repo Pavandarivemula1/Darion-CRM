@@ -178,6 +178,19 @@
                         <option value="Needs Website">Needs Website</option>
                         <option value="Has WhatsApp">Has WhatsApp</option>
                     </select>
+                    <select id="filterDateRange" class="modal-input" style="width: 150px; margin-top:0;" onchange="toggleCustomDateInputs(); applyFilters()">
+                        <option value="All">All Time</option>
+                        <option value="Today">Today</option>
+                        <option value="Yesterday">Yesterday</option>
+                        <option value="Last 7 Days">Last 7 Days</option>
+                        <option value="Last 30 Days">Last 30 Days</option>
+                        <option value="Custom">Custom Date</option>
+                    </select>
+                    <div id="customDateWrap" style="display:none; align-items:center; gap:6px;">
+                        <input type="date" id="filterStartDate" class="modal-input" style="width: 130px; margin-top:0; padding:0 8px;" onchange="applyFilters()" />
+                        <span style="color:var(--text-muted); font-size:12px;">to</span>
+                        <input type="date" id="filterEndDate" class="modal-input" style="width: 130px; margin-top:0; padding:0 8px;" onchange="applyFilters()" />
+                    </div>
                     <button id="dueTodayBtn" class="btn-outline" onclick="filterDueToday()"
                         title="Show leads due today">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
