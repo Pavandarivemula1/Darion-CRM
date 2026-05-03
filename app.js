@@ -677,6 +677,10 @@ function renderTable() {
         if(priorityText.includes('High')) badgeClass = 'high';
         if(priorityText.includes('Medium')) badgeClass = 'medium';
 
+        // Set data-priority for CSS border coloring on mobile cards
+        const priorityKey = badgeClass.charAt(0).toUpperCase() + badgeClass.slice(1);
+        tr.setAttribute('data-priority', priorityKey);
+
         let cleanPriority = priorityText.replace(/[^a-zA-Z]/g, '').trim();
         if(cleanPriority === '') cleanPriority = 'Scheduled';
 
@@ -3029,79 +3033,73 @@ window.renderCalendar = function() {
     if (!calendarView || calendarView.style.display === 'none') return;
 
     const monthLabel = document.getElementById('calendarMonthLabel');
-    const grid = document.getElementById('calendarGrid');
-    if (!monthLabel || !grid) return;
+    if (!monthLabel) return;
 
     const year = currentCalendarDate.getFullYear();
     const month = currentCalendarDate.getMonth();
-    
-    // Update Header Label
     monthLabel.textContent = currentCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-    // Calculate Grid Dates
-    const firstDayOfMonth = new Date(year, month, 1);
-    const lastDayOfMonth = new Date(year, month + 1, 0);
-    
-    // Day of week for 1st of month (0 = Sun, 1 = Mon...)
-    const startOffset = firstDayOfMonth.getDay();
-    const daysInMonth = lastDayOfMonth.getDate();
-
-    // Collect all leads with a scheduled date
     const tasks = [];
     globalLeads.forEach(l => {
         if (l['Lead Status'] === 'Closed' || l['Lead Status'] === 'Duplicate' || l['Lead Status'] === 'Not Interested') return;
         const dateStr = l['Next Follow-Up Date'];
         if (!dateStr) return;
-        
         const d = new Date(dateStr);
-        // Normalize time to compare
         d.setHours(0,0,0,0);
-        
-        tasks.push({
-            leadId: l['Lead ID'],
-            name: l.Name || 'Unnamed',
-            priority: l['Follow-Up Priority (Auto)'] || '',
-            date: d.getTime()
-        });
+        tasks.push({ leadId: l['Lead ID'], name: l.Name || 'Unnamed', priority: l['Follow-Up Priority (Auto)'] || '', date: d.getTime(), dateObj: new Date(d) });
     });
 
-    let html = '';
     const todayMs = new Date().setHours(0,0,0,0);
+    const isMobile = window.innerWidth < 769;
+    const agenda = document.getElementById('calendarAgendaMobile');
 
-    // Render cells
-    const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7; // Always full rows
+    if (isMobile && agenda) {
+        const monthTasks = tasks.filter(t => t.dateObj.getFullYear() === year && t.dateObj.getMonth() === month).sort((a,b) => a.date - b.date);
+        if (monthTasks.length === 0) {
+            agenda.innerHTML = `<div class="cal-agenda-empty"><div>No follow-ups scheduled this month.</div></div>`;
+            return;
+        }
+        const grouped = {};
+        monthTasks.forEach(t => {
+            const key = t.dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            if (!grouped[key]) grouped[key] = { ms: t.date, tasks: [] };
+            grouped[key].tasks.push(t);
+        });
+        let html = '';
+        Object.keys(grouped).forEach(label => {
+            const group = grouped[label];
+            const isToday = group.ms === todayMs;
+            html += `<div class="cal-agenda-day"><div class="cal-agenda-day-label ${isToday ? 'today-label' : ''}">${isToday ? '📍 TODAY — ' : ''}${label}</div>`;
+            group.tasks.forEach(t => {
+                const isHigh = t.priority.includes('High');
+                html += `<div class="cal-agenda-task ${isHigh ? 'high' : ''}" onclick="viewLead('${t.leadId}')"><span class="cal-agenda-task-name">${t.name}</span><span class="cal-agenda-task-badge">${isHigh ? '🔴 High' : 'Follow-up'}</span></div>`;
+            });
+            html += `</div>`;
+        });
+        agenda.innerHTML = html;
+        return;
+    }
+
+    const grid = document.getElementById('calendarGrid');
+    if (!grid) return;
+    const firstDayOfMonth = new Date(year, month, 1);
+    const startOffset = firstDayOfMonth.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+    let html = '';
     for (let i = 0; i < totalCells; i++) {
-        // Calculate the actual date for this cell
         const cellDate = new Date(year, month, 1 - startOffset + i);
         cellDate.setHours(0,0,0,0);
         const cellMs = cellDate.getTime();
-
         const isCurrentMonth = cellDate.getMonth() === month;
         const isToday = cellMs === todayMs;
-
-        // Find tasks for this day
         const dayTasks = tasks.filter(t => t.date === cellMs);
-
-        // Build task HTML
         let tasksHtml = '';
         dayTasks.forEach(t => {
             const isHigh = t.priority.includes('High');
-            tasksHtml += `
-                <div class="calendar-task ${isHigh ? 'high-priority' : ''}" onclick="event.stopPropagation(); viewLead('${t.leadId}')" title="${t.name}">
-                    ${t.name}
-                </div>
-            `;
+            tasksHtml += `<div class="calendar-task ${isHigh ? 'high-priority' : ''}" onclick="event.stopPropagation(); viewLead('${t.leadId}')" title="${t.name}">${t.name}</div>`;
         });
-
-        html += `
-            <div class="calendar-day ${isCurrentMonth ? '' : 'other-month'} ${isToday ? 'today' : ''}">
-                <div class="day-number">${cellDate.getDate()}</div>
-                <div style="flex:1; display:flex; flex-direction:column; gap:4px; overflow-y:auto;">
-                    ${tasksHtml}
-                </div>
-            </div>
-        `;
+        html += `<div class="calendar-day ${isCurrentMonth ? '' : 'other-month'} ${isToday ? 'today' : ''}"><div class="day-number">${cellDate.getDate()}</div><div style="flex:1;display:flex;flex-direction:column;gap:4px;overflow-y:auto;">${tasksHtml}</div></div>`;
     }
-
     grid.innerHTML = html;
 };
