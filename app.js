@@ -1120,6 +1120,7 @@ function viewLead(id) {
                     <option value="Demo Requested" ${lead['Lead Status']=='Demo Requested'?'selected':''}>Demo Requested</option>
                     <option value="Not Interested" ${lead['Lead Status']=='Not Interested'?'selected':''}>Not Interested</option>
                     <option value="Closed" ${lead['Lead Status']=='Closed'?'selected':''}>Closed/Won</option>
+                    <option value="Hold" ${lead['Lead Status']=='Hold'?'selected':''}>Hold</option>
                     <option value="Duplicate" ${lead['Lead Status']=='Duplicate'?'selected':''}>Duplicate</option>
                 </select>
             </div>
