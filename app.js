@@ -747,25 +747,74 @@ function dropLead(ev, targetStatus) {
 //  ACTIVITY TIMELINE HELPERS
 // ═══════════════════════════════════════════════════
 
-function _renderActivityTimeline(rawNotes, initialLimit) {
+function _renderActivityTimeline(rawNotes, initialLimit, filterCategory = 'all', filterDate = '') {
     if (!rawNotes || !rawNotes.trim()) {
         return `<p style="font-size:13px; color:var(--text-muted); text-align:center; padding:20px 0;">No activity yet.</p>`;
     }
 
-    const entries = rawNotes.split('\n---\n').map(e => e.trim()).filter(Boolean);
+    let entries = rawNotes.split('\n---\n').map(e => e.trim()).filter(Boolean);
+
+    // Apply Filters
+    if (filterCategory !== 'all' || filterDate) {
+        entries = entries.filter(entry => {
+            const isAuto   = /^\[.*?\]\s*(?:\{.*?\}\s*)?(\[SYS\]|✏️|⚡)/.test(entry);
+            const isNote   = /^\[.*?\]\s*(?:\{.*?\}\s*)?(\[NOTE\]|📝)/.test(entry);
+            const isDeploy = /^\[.*?\]\s*(?:\{.*?\}\s*)?(\[DEPLOY\]|🚀)/.test(entry);
+            const isSched  = /^\[.*?\]\s*(?:\{.*?\}\s*)?(\[SCHED\]|📅|✅)/.test(entry);
+            
+            let catMatch = true;
+            if (filterCategory === 'note') catMatch = isNote;
+            else if (filterCategory === 'sys') catMatch = isAuto;
+            else if (filterCategory === 'deploy') catMatch = isDeploy;
+            else if (filterCategory === 'sched') catMatch = isSched;
+            
+            let dateMatch = true;
+            if (filterDate) {
+                const parts = filterDate.split('-');
+                if (parts.length === 3) {
+                    const formattedFilterDate1 = `${parts[2]}/${parts[1]}/${parts[0]}`; // e.g. 03/05/2026
+                    const formattedFilterDate2 = `${parseInt(parts[2],10)}/${parseInt(parts[1],10)}/${parts[0]}`; // e.g. 3/5/2026
+                    const tsMatch = entry.match(/^\[([^\]]+)\]/);
+                    if (tsMatch) {
+                        const ts = tsMatch[1];
+                        const entryDate = ts.split(',')[0].trim();
+                        dateMatch = (entryDate === formattedFilterDate1 || entryDate === formattedFilterDate2);
+                    } else {
+                        dateMatch = false;
+                    }
+                }
+            }
+            return catMatch && dateMatch;
+        });
+    }
+
+    if (entries.length === 0) {
+        return `<p style="font-size:13px; color:var(--text-muted); text-align:center; padding:20px 0;">No activity matches the filters.</p>`;
+    }
+
+    const isFiltered = (filterCategory !== 'all' || filterDate !== '');
+    const limit = isFiltered ? entries.length : initialLimit;
     const total   = entries.length;
-    const shown   = entries.slice(0, initialLimit);
+    const shown   = entries.slice(0, limit);
 
     function renderCard(entry) {
-        const isAuto   = /^\[.*?\]\s*(\[SYS\]|✏️|⚡)/.test(entry);
-        const isNote   = /^\[.*?\]\s*(\[NOTE\]|📝)/.test(entry);
-        const isDeploy = /^\[.*?\]\s*(\[DEPLOY\]|🚀)/.test(entry);
-        const isSched  = /^\[.*?\]\s*(\[SCHED\]|📅|✅)/.test(entry);
+        const isAuto   = /^\[.*?\]\s*(?:\{.*?\}\s*)?(\[SYS\]|✏️|⚡)/.test(entry);
+        const isNote   = /^\[.*?\]\s*(?:\{.*?\}\s*)?(\[NOTE\]|📝)/.test(entry);
+        const isDeploy = /^\[.*?\]\s*(?:\{.*?\}\s*)?(\[DEPLOY\]|🚀)/.test(entry);
+        const isSched  = /^\[.*?\]\s*(?:\{.*?\}\s*)?(\[SCHED\]|📅|✅)/.test(entry);
 
         // Extract timestamp if present
         const tsMatch = entry.match(/^\[([^\]]+)\]/);
         const ts      = tsMatch ? tsMatch[1] : '';
         let body      = tsMatch ? entry.slice(tsMatch[0].length).trim() : entry;
+
+        // Extract username if present
+        let user = '';
+        const userMatch = body.match(/^\{([^\}]+)\}/);
+        if (userMatch) {
+            user = userMatch[1];
+            body = body.slice(userMatch[0].length).trim();
+        }
 
         // Strip structural tags and legacy emojis
         body = body.replace(/^(\[SYS\]|\[NOTE\]|\[DEPLOY\]|\[SCHED\]|✏️|⚡|🚀|📝|📅|✅)\s*/, '');
@@ -780,9 +829,14 @@ function _renderActivityTimeline(rawNotes, initialLimit) {
         const border = isDeploy ? '#8b5cf6'  : isNote ? '#16a34a'  : '#e5e7eb';
         const color  = isDeploy ? '#5b21b6'  : isNote ? '#15803d'  : '#6b7280';
 
+        const headerElements = [];
+        if (ts) headerElements.push(ts);
+        if (user) headerElements.push(`<span style="font-weight:600; color:var(--text-color);">${user}</span>`);
+        const headerHtml = headerElements.length > 0 ? `<div style="font-size:10px; color:#9ca3af; margin-bottom:4px; display:flex; gap:6px;">${headerElements.join(' &bull; ')}</div>` : '';
+
         return `
             <div style="background:${bg}; border-left:3px solid ${border}; border-radius:4px; padding:9px 12px; margin-bottom:8px;">
-                ${ts ? `<div style="font-size:10px; color:#9ca3af; margin-bottom:4px;">${ts}</div>` : ''}
+                ${headerHtml}
                 <div style="font-size:12px; color:${color}; white-space:pre-wrap; display:flex; align-items:flex-start;">
                     ${iconHtml ? `<div style="margin-top:2px; margin-right:6px; flex-shrink:0;">${iconHtml}</div>` : ''}
                     <div style="flex:1; min-width:0;">${body}</div>
@@ -792,11 +846,11 @@ function _renderActivityTimeline(rawNotes, initialLimit) {
 
     let html = shown.map(renderCard).join('');
 
-    if (total > initialLimit) {
-        const hidden = entries.slice(initialLimit);
+    if (total > limit) {
+        const hidden = entries.slice(limit);
         html += `
             <div id="activityExtra" style="display:none;">${hidden.map(renderCard).join('')}</div>
-            <button onclick="_toggleActivityFull(this, ${total - initialLimit})"
+            <button onclick="_toggleActivityFull(this, ${total - limit})"
                 style="width:100%; padding:8px; background:none; border:1px dashed var(--border-color); border-radius:4px; font-size:12px; color:var(--text-muted); cursor:pointer; margin-top:2px;">
                 Show all ${total} entries ▼
             </button>`;
@@ -804,6 +858,20 @@ function _renderActivityTimeline(rawNotes, initialLimit) {
 
     return html;
 }
+
+window.applyActivityFilters = function() {
+    const lead = globalLeads.find(l => l['Lead ID'] === editingLeadId);
+    if (!lead) return;
+    
+    const cat = document.getElementById('activityCategoryFilter').value;
+    const date = document.getElementById('activityDateFilter').value;
+    const container = document.getElementById('activityTimelineContainer');
+    
+    if (container) {
+        container.innerHTML = _renderActivityTimeline(lead['Follow-Up Notes'] || '', 4, cat, date);
+        if (typeof refreshIcons === 'function') refreshIcons();
+    }
+};
 
 window._switchTab = function(tab) {
     const panels = { notes: 'panelNotes', activity: 'panelActivity', schedule: 'panelSchedule' };
@@ -887,7 +955,20 @@ function viewLead(id) {
 
             <!-- Activity timeline panel -->
             <div id="panelActivity" style="display:none;">
-                ${_renderActivityTimeline(lead['Follow-Up Notes'] || '', 4)}
+                <div style="display:flex; gap:10px; margin-bottom:12px; align-items:center;">
+                    <select id="activityCategoryFilter" onchange="applyActivityFilters()" class="modal-input" style="padding: 4px 8px; font-size:12px; min-height: 28px; width: 140px; margin-bottom:0;">
+                        <option value="all">All Logs</option>
+                        <option value="note">Notes Only</option>
+                        <option value="sys">System Activity</option>
+                        <option value="deploy">Deployments</option>
+                        <option value="sched">Schedules</option>
+                    </select>
+                    <input type="date" id="activityDateFilter" onchange="applyActivityFilters()" class="modal-input" style="padding: 4px 8px; font-size:12px; min-height: 28px; width: 140px; margin-bottom:0;" />
+                    <button type="button" onclick="document.getElementById('activityCategoryFilter').value='all'; document.getElementById('activityDateFilter').value=''; applyActivityFilters();" style="background:none; border:none; color:var(--brand-primary); font-size:12px; cursor:pointer; padding:4px;">Clear</button>
+                </div>
+                <div id="activityTimelineContainer">
+                    ${_renderActivityTimeline(lead['Follow-Up Notes'] || '', 4)}
+                </div>
             </div>
 
             <!-- Schedule panel -->
@@ -2297,7 +2378,8 @@ window.togglePassVis = function(inputId, btn) {
  */
 function _buildLogEntry(lead, message) {
     const ts = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true });
-    const entry = `[${ts}] ${message}`;
+    const user = window.currentUser ? (window.currentUser.fullName || window.currentUser.email || 'System') : 'System';
+    const entry = `[${ts}] {${user}} ${message}`;
     const existing = lead ? (lead['Follow-Up Notes'] || '') : '';
     return existing ? `${entry}\n---\n${existing}` : entry;
 }
