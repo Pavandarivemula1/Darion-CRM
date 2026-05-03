@@ -186,6 +186,9 @@
                         <option value="Last 30 Days">Last 30 Days</option>
                         <option value="Custom">Custom Date</option>
                     </select>
+                    <select id="filterUser" class="modal-input" style="width: 150px; margin-top:0;" onchange="applyFilters()">
+                        <option value="All">All Users</option>
+                    </select>
                     <div id="customDateWrap" style="display:none; align-items:center; gap:6px;">
                         <input type="date" id="filterStartDate" class="modal-input" style="width: 130px; margin-top:0; padding:0 8px;" onchange="applyFilters()" />
                         <span style="color:var(--text-muted); font-size:12px;">to</span>
@@ -290,6 +293,7 @@
                                         <th style="width: 40px; text-align: center;"><input type="checkbox"
                                                 id="selectAllLeads" onchange="toggleSelectAll(this)"
                                                 style="cursor:pointer;"></th>
+                                        <th>ID</th>
                                         <th>Lead Name</th>
                                         <th>Contact Info</th>
                                         <th>Region</th>
@@ -300,7 +304,7 @@
                                 </thead>
                                 <tbody id="tableBody">
                                     <tr>
-                                        <td colspan="6"
+                                        <td colspan="7"
                                             style="text-align: center; color: var(--text-muted); padding: 40px;">Syncing
                                             with server...</td>
                                     </tr>

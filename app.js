@@ -298,7 +298,7 @@ function toggleMobileFilters() {
 function loadData(isSilentPolling = false) {
     const tbody = document.getElementById('tableBody');
     if(!isSilentPolling) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">Fetching records...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">Fetching records...</td></tr>';
     }
     
     // Bulletproof fetch: no `.order` on network layer to bypass SDK column-name-spacing bugs
@@ -321,7 +321,7 @@ function loadData(isSilentPolling = false) {
             return numA - numB;
         });
 
-        populateCityFilter(globalLeads); 
+        populateDynamicFilters(globalLeads); 
         applyFilters(); 
         renderPipeline(); 
         if (typeof renderSchedulePanel === 'function') renderSchedulePanel();
@@ -329,13 +329,14 @@ function loadData(isSilentPolling = false) {
     .catch(err => {
         console.error("SUPABASE FETCH ERROR:", err);
         if(!isSilentPolling) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 40px;">Connection failed. Error: <strong>${err.message || err.toString()}</strong></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 40px;">Connection failed. Error: <strong>${err.message || err.toString()}</strong></td></tr>`;
         }
     });
 }
 
-function populateCityFilter(leads) {
+function populateDynamicFilters(leads) {
     const citySet = new Set();
+    const userSet = new Set();
     leads.forEach(l => {
         let cityText = 'Unknown';
         if(l.Location) {
@@ -351,22 +352,49 @@ function populateCityFilter(leads) {
         if(cityText.length > 2 && cityText.length < 50) {
             citySet.add(cityText);
         }
+
+        const creator = _getLeadCreator(l);
+        if (creator) {
+            userSet.add(creator);
+        }
     });
 
     const select = document.getElementById('filterCity');
-    if(!select) return;
-    
-    const currentVal = select.value;
-    select.innerHTML = '<option value="All">All Regions</option>';
-    
-    const sortedCities = Array.from(citySet).sort();
-    sortedCities.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c;
-        opt.innerText = c;
-        if(c === currentVal) opt.selected = true;
-        select.appendChild(opt);
-    });
+    if(select) {
+        const currentVal = select.value;
+        select.innerHTML = '<option value="All">All Regions</option>';
+        const sortedCities = Array.from(citySet).sort();
+        sortedCities.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c;
+            opt.innerText = c;
+            if(c === currentVal) opt.selected = true;
+            select.appendChild(opt);
+        });
+    }
+
+    const userSelect = document.getElementById('filterUser');
+    if(userSelect) {
+        const currentUserVal = userSelect.value;
+        userSelect.innerHTML = '<option value="All">All Users</option>';
+        const sortedUsers = Array.from(userSet).sort();
+        sortedUsers.forEach(u => {
+            if (u === 'Unknown User') return; // Skip unknown in filter
+            const opt = document.createElement('option');
+            opt.value = u;
+            opt.innerText = u;
+            if(u === currentUserVal) opt.selected = true;
+            userSelect.appendChild(opt);
+        });
+        // Append Unknown at the end
+        if (userSet.has('Unknown User')) {
+            const opt = document.createElement('option');
+            opt.value = 'Unknown User';
+            opt.innerText = 'Unknown User';
+            if('Unknown User' === currentUserVal) opt.selected = true;
+            userSelect.appendChild(opt);
+        }
+    }
 }
 
 window.toggleCustomDateInputs = function() {
@@ -397,16 +425,28 @@ function _getLeadCreationDate(lead) {
     return null;
 }
 
+function _getLeadCreator(lead) {
+    const notes = lead['Follow-Up Notes'] || '';
+    const entries = notes.split('\n---\n').map(e => e.trim()).filter(Boolean);
+    for (let i = entries.length - 1; i >= 0; i--) {
+        const userMatch = entries[i].match(/^\[.*?\]\s*\{([^\}]+)\}/);
+        if (userMatch) return userMatch[1];
+    }
+    return 'Unknown User';
+}
+
 function applyFilters() {
     const citySelect     = document.getElementById('filterCity');
     const statusSelect   = document.getElementById('filterStatus');
     const prioritySelect = document.getElementById('filterPriority');
     const serviceSelect  = document.getElementById('filterService');
+    const userSelect     = document.getElementById('filterUser');
 
     currentCityFilter     = citySelect     ? citySelect.value     : 'All';
     currentStatusFilter   = statusSelect   ? statusSelect.value   : 'All';
     currentPriorityFilter = prioritySelect ? prioritySelect.value : 'All';
     currentServiceFilter  = serviceSelect  ? serviceSelect.value  : 'All';
+    currentUserFilter     = userSelect     ? userSelect.value     : 'All';
 
     // Date Filters
     const dateRangeSelect = document.getElementById('filterDateRange');
@@ -494,7 +534,12 @@ function applyFilters() {
             }
         }
 
-        return matchSearch && matchCity && matchStatus && matchPriority && matchService && matchDate;
+        let matchUser = true;
+        if (currentUserFilter !== 'All') {
+            matchUser = (_getLeadCreator(lead) === currentUserFilter);
+        }
+
+        return matchSearch && matchCity && matchStatus && matchPriority && matchService && matchDate && matchUser;
     });
 
     const maxPage = Math.ceil(visuallyFilteredLeads.length / itemsPerPage);
@@ -539,7 +584,7 @@ function renderTable() {
     tbody.innerHTML = '';
     
     if(visuallyFilteredLeads.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">No leads exactly match your filters.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">No leads exactly match your filters.</td></tr>';
         updatePagination(1, 1, 0);
         return;
     }
@@ -606,6 +651,7 @@ function renderTable() {
         const safeName = (lead.Name || 'Unnamed Lead').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         tr.innerHTML = `
             <td style="text-align: center;"><input type="checkbox" class="lead-checkbox" value="${lead['Lead ID']}" ${isChecked} onchange="toggleLeadSelection(this)" style="cursor:pointer;"></td>
+            <td data-label="ID"><span style="font-size:12.5px; color:var(--text-muted); font-family:monospace; font-weight:600;">${lead['Lead ID']}</span></td>
             <td data-label="Lead Name" onclick="copyTitleAndOpen('${safeName}', '${lead['Lead ID']}'); event.stopPropagation();" style="cursor:pointer;" title="Click to copy name and view lead">
                 <strong style="color:var(--brand-primary);">${lead.Name || 'Unnamed Lead'}</strong>${dueBadge}
                 <span class="keyboard-shortcut" style="display:none; pointer-events:none;">double-click to open</span>
