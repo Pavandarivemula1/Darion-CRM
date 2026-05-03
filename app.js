@@ -244,6 +244,7 @@ function initNavigation() {
     const dBtn = document.getElementById('navDashboardBtn');
     const pBtn = document.getElementById('navPipelineBtn');
     const aBtn = document.getElementById('navAnalyticsBtn');
+    const cBtn = document.getElementById('navCalendarBtn');
     const prBtn = document.getElementById('navProfileBtn');
     if(!dBtn || !pBtn) return;
 
@@ -253,20 +254,23 @@ function initNavigation() {
         
         const analyticsView = document.getElementById('analyticsView');
         if (analyticsView) analyticsView.style.display = view === 'analytics' ? 'block' : 'none';
+
+        const calendarView = document.getElementById('calendarView');
+        if (calendarView) calendarView.style.display = view === 'calendar' ? 'block' : 'none';
         
         document.getElementById('profileView').style.display   = view === 'profile'   ? 'block' : 'none';
         
         // Header visibility: hide filters + actions in profile and analytics view
         const header = document.querySelector('header');
         const filters = document.getElementById('globalFilters');
-        if (view === 'profile' || view === 'analytics') {
+        if (view === 'profile' || view === 'analytics' || view === 'calendar') {
             if (header)  header.style.display  = 'none';
             if (filters) filters.style.display = 'none';
         } else {
             if (header)  header.style.display  = '';
             if (filters) filters.style.display = '';
         }
-        [dBtn, pBtn, aBtn, prBtn].forEach(b => b && b.classList.remove('active'));
+        [dBtn, pBtn, aBtn, cBtn, prBtn].forEach(b => b && b.classList.remove('active'));
     }
 
     dBtn.addEventListener('click', (e) => {
@@ -282,6 +286,15 @@ function initNavigation() {
         pBtn.classList.add('active');
         applyFilters();
     });
+
+    if (cBtn) {
+        cBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            showView('calendar');
+            cBtn.classList.add('active');
+            if (typeof renderCalendar === 'function') renderCalendar();
+        });
+    }
 
     if (aBtn) {
         aBtn.addEventListener('click', (e) => {
@@ -357,6 +370,7 @@ function loadData(isSilentPolling = false) {
         renderPipeline(); 
         if (typeof renderAnalytics === 'function') renderAnalytics();
         if (typeof renderSchedulePanel === 'function') renderSchedulePanel();
+        if (typeof renderCalendar === 'function') renderCalendar();
     })
     .catch(err => {
         console.error("SUPABASE FETCH ERROR:", err);
@@ -2992,4 +3006,101 @@ window.sendEmailTemplate = function(leadId) {
 
     const url = `mailto:${lead.Email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(url, '_blank');
+};
+
+// ============================================================
+// CALENDAR VIEW
+// ============================================================
+let currentCalendarDate = new Date(); // Represents the currently viewed month
+
+window.changeCalendarMonth = function(offset) {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + offset);
+    renderCalendar();
+};
+
+window.resetCalendarMonth = function() {
+    currentCalendarDate = new Date();
+    renderCalendar();
+};
+
+window.renderCalendar = function() {
+    const calendarView = document.getElementById('calendarView');
+    if (!calendarView || calendarView.style.display === 'none') return;
+
+    const monthLabel = document.getElementById('calendarMonthLabel');
+    const grid = document.getElementById('calendarGrid');
+    if (!monthLabel || !grid) return;
+
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    
+    // Update Header Label
+    monthLabel.textContent = currentCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    // Calculate Grid Dates
+    const firstDayOfMonth = new Date(year, month, 1);
+    const lastDayOfMonth = new Date(year, month + 1, 0);
+    
+    // Day of week for 1st of month (0 = Sun, 1 = Mon...)
+    const startOffset = firstDayOfMonth.getDay();
+    const daysInMonth = lastDayOfMonth.getDate();
+
+    // Collect all leads with a scheduled date
+    const tasks = [];
+    globalLeads.forEach(l => {
+        if (l['Lead Status'] === 'Closed' || l['Lead Status'] === 'Duplicate' || l['Lead Status'] === 'Not Interested') return;
+        const dateStr = l['Next Follow-Up Date'];
+        if (!dateStr) return;
+        
+        const d = new Date(dateStr);
+        // Normalize time to compare
+        d.setHours(0,0,0,0);
+        
+        tasks.push({
+            leadId: l['Lead ID'],
+            name: l.Name || 'Unnamed',
+            priority: l['Follow-Up Priority (Auto)'] || '',
+            date: d.getTime()
+        });
+    });
+
+    let html = '';
+    const todayMs = new Date().setHours(0,0,0,0);
+
+    // Render cells
+    const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7; // Always full rows
+    for (let i = 0; i < totalCells; i++) {
+        // Calculate the actual date for this cell
+        const cellDate = new Date(year, month, 1 - startOffset + i);
+        cellDate.setHours(0,0,0,0);
+        const cellMs = cellDate.getTime();
+
+        const isCurrentMonth = cellDate.getMonth() === month;
+        const isToday = cellMs === todayMs;
+
+        // Find tasks for this day
+        const dayTasks = tasks.filter(t => t.date === cellMs);
+
+        // Build task HTML
+        let tasksHtml = '';
+        dayTasks.forEach(t => {
+            const isHigh = t.priority.includes('High');
+            tasksHtml += `
+                <div class="calendar-task ${isHigh ? 'high-priority' : ''}" onclick="event.stopPropagation(); viewLead('${t.leadId}')" title="${t.name}">
+                    ${t.name}
+                </div>
+            `;
+        });
+
+        html += `
+            <div class="calendar-day ${isCurrentMonth ? '' : 'other-month'} ${isToday ? 'today' : ''}">
+                <div class="day-number">${cellDate.getDate()}</div>
+                <div style="flex:1; display:flex; flex-direction:column; gap:4px; overflow-y:auto;">
+                    ${tasksHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    grid.innerHTML = html;
 };

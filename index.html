@@ -54,6 +54,15 @@
                     </svg>
                     Analytics
                 </a>
+                <a href="#" id="navCalendarBtn">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    Calendar
+                </a>
                 <a href="#" id="navProfileBtn">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -403,6 +412,37 @@
                             <div id="leaderboardContainer" style="display:flex; flex-direction:column; gap:12px;">
                                 <div style="color:var(--text-muted); font-size:13px; text-align:center; padding:20px;">Loading data...</div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar View -->
+            <div id="calendarView" style="display:none; flex:1; overflow-y:auto; padding:24px;">
+                <div style="max-width:1100px; margin:0 auto; padding-bottom:100px;">
+                    <div style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-end;">
+                        <div>
+                            <h1 style="font-size:24px; font-weight:700; color:var(--text-main); margin-bottom:8px;">Calendar</h1>
+                            <p style="color:var(--text-muted); font-size:14px;">View your monthly schedule and upcoming follow-ups.</p>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <button onclick="changeCalendarMonth(-1)" class="btn-outline" style="padding:8px 12px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                            </button>
+                            <span id="calendarMonthLabel" style="font-size:16px; font-weight:700; width:140px; text-align:center;">Month YYYY</span>
+                            <button onclick="changeCalendarMonth(1)" class="btn-outline" style="padding:8px 12px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </button>
+                            <button onclick="resetCalendarMonth()" class="btn-outline" style="padding:8px 12px; margin-left:8px;">Today</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card" style="padding:0; overflow:hidden;">
+                        <div class="calendar-grid-header">
+                            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                        </div>
+                        <div id="calendarGrid" class="calendar-grid">
+                            <!-- Injected by JS -->
                         </div>
                     </div>
                 </div>

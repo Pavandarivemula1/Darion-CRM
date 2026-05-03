@@ -1316,3 +1316,88 @@ tr:last-child td { border-bottom: none; }
     margin-left: 6px;
     vertical-align: middle;
 }
+
+/* ── Calendar View ────────────────────────────────────────── */
+.calendar-grid-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: var(--cds-layer-02);
+    border-bottom: 1px solid var(--cds-border-subtle-01);
+}
+.calendar-grid-header div {
+    padding: 10px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--cds-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-right: 1px solid var(--cds-border-subtle-01);
+}
+.calendar-grid-header div:last-child {
+    border-right: none;
+}
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: var(--cds-border-subtle-01);
+    gap: 1px;
+}
+.calendar-day {
+    background: var(--cds-layer-01);
+    min-height: 120px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.calendar-day.other-month {
+    background: var(--cds-layer-02);
+}
+.calendar-day.today .day-number {
+    background: var(--cds-interactive);
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+.day-number {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cds-text-primary);
+    margin-bottom: 4px;
+    align-self: flex-end;
+}
+.other-month .day-number {
+    color: var(--cds-text-placeholder);
+}
+.calendar-task {
+    background: var(--cds-support-info-bg);
+    color: var(--cds-interactive);
+    border: 1px solid rgba(15, 98, 254, 0.2);
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all 0.1s;
+}
+.calendar-task:hover {
+    background: var(--cds-interactive);
+    color: #fff;
+}
+.calendar-task.high-priority {
+    background: var(--cds-support-error-bg);
+    color: var(--cds-support-error);
+    border-color: rgba(218, 30, 40, 0.2);
+}
+.calendar-task.high-priority:hover {
+    background: var(--cds-support-error);
+    color: #fff;
+}
