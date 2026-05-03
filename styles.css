@@ -1040,6 +1040,21 @@ tr:last-child td { border-bottom: none; }
         overflow-x: hidden !important;
         overflow-y: hidden;
     }
+
+    /* Scale down Carbon tokens for higher density on mobile */
+    :root {
+        --cds-btn-height: 40px;
+        --cds-input-height: 36px;
+        --cds-spacing-03: 6px;
+        --cds-spacing-04: 10px;
+        --cds-spacing-05: 12px;
+        --cds-spacing-06: 16px;
+        --cds-label-01-size: 11px;
+        --cds-body-compact-01-size: 13px;
+        --cds-body-01-size: 13px;
+        --cds-heading-compact-01-size: 14px;
+        --cds-heading-02-size: 15px;
+    }
     .app-layout {
         display: flex;
         flex-direction: column;
@@ -1090,7 +1105,7 @@ tr:last-child td { border-bottom: none; }
         border-left: none;
         border-top: 3px solid transparent;
         color: var(--cds-text-placeholder);
-        min-height: 48px;
+        min-height: 44px;
         transition: background var(--cds-motion-fast-02), color var(--cds-motion-fast-02);
     }
     .sidebar nav a.active {
@@ -1099,7 +1114,7 @@ tr:last-child td { border-bottom: none; }
         border-top-color: var(--cds-interactive);
         font-weight: 600;
     }
-    .sidebar nav a svg { stroke: var(--cds-text-placeholder); width: 20px; height: 20px; }
+    .sidebar nav a svg { stroke: var(--cds-text-placeholder); width: 18px; height: 18px; }
     .sidebar nav a.active svg { stroke: var(--cds-interactive); }
 
     /* Main Content */
