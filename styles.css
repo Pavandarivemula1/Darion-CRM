@@ -1396,14 +1396,54 @@ tr:last-child td { border-bottom: none; }
         font-size: var(--cds-body-compact-01-size);
     }
 
-    /* Analytics — Stack to single column on mobile */
+    /* Analytics — Redesign for mobile view */
     #analyticsView {
         overflow-y: auto !important;
         overflow-x: hidden !important;
         padding: var(--cds-spacing-05) !important;
     }
-    #analyticsView > div { gap: var(--cds-spacing-05) !important; }
-    #analyticsView .card { margin-bottom: 0; }
+    #analyticsView > div { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 60px) !important; }
+    #analyticsView h1 { font-size: var(--cds-heading-03-size) !important; margin-bottom: var(--cds-spacing-02) !important; }
+    #analyticsView p { font-size: var(--cds-body-compact-01-size) !important; }
+    
+    /* Metrics Grid — 2x2 instead of 1 column for density */
+    #analyticsView [style*="grid-template-columns:repeat"] {
+        grid-template-columns: 1fr 1fr !important;
+        gap: var(--cds-spacing-04) !important;
+        margin-bottom: var(--cds-spacing-05) !important;
+    }
+    #analyticsView [style*="grid-template-columns:repeat"] .card {
+        padding: var(--cds-spacing-05) !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: var(--cds-shadow-sm) !important;
+        border: 1px solid var(--cds-border-subtle-01) !important;
+    }
+    #analyticsView [style*="grid-template-columns:repeat"] .card > div:first-child {
+        font-size: var(--cds-label-01-size) !important;
+        letter-spacing: 0.04em !important;
+    }
+    #analyticsView [style*="grid-template-columns:repeat"] .card > div:last-child {
+        font-size: 24px !important;
+        margin-top: var(--cds-spacing-03) !important;
+    }
+
+    /* Charts Row — Stack to single column */
+    #analyticsView [style*="grid-template-columns:2fr 1fr"],
+    #analyticsView [style*="grid-template-columns: 2fr 1fr"] {
+        grid-template-columns: 1fr !important;
+        gap: var(--cds-spacing-05) !important;
+    }
+    #analyticsView [style*="grid-template-columns:2fr 1fr"] .card {
+        padding: var(--cds-spacing-05) !important;
+        border-radius: 0 !important;
+        box-shadow: var(--cds-shadow-sm) !important;
+        border: 1px solid var(--cds-border-subtle-01) !important;
+    }
+    #analyticsView [style*="grid-template-columns:2fr 1fr"] .card > div:first-child {
+        font-size: var(--cds-heading-compact-01-size) !important;
+        margin-bottom: var(--cds-spacing-04) !important;
+    }
     canvas { max-width: 100% !important; height: auto !important; }
 }
 
